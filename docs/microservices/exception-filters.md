@@ -1,17 +1,19 @@
-### 异常过滤器
+<!-- 此文件从 content/microservices/exception-filters.md 自动生成，请勿直接修改此文件 -->
+<!-- 生成时间: 2026-06-30T03:12:44.987Z -->
+<!-- 源文件: content/microservices/exception-filters.md -->
 
-HTTP [异常过滤器](/overview/exception-filters)层与对应微服务层的唯一区别在于，不应抛出 `HttpException`，而应使用 `RpcException`。
+### Exception filters
+
+The only difference between the HTTP [exception filter](/exception-filters) layer and the corresponding microservices layer is that instead of throwing `HttpException`, you should use `RpcException`.
 
 ```typescript
 throw new RpcException('Invalid credentials.');
 
 ```
 
-:::info 提示
-`RpcException` 类是从 `@nestjs/microservices` 包导入的。
-:::
+> info **Hint** The `RpcException` class is imported from the `@nestjs/microservices` package.
 
-使用上述示例时，Nest 将处理抛出的异常并返回具有以下结构的 `error` 对象：
+With the sample above, Nest will handle the thrown exception and return the `error` object with the following structure:
 
 ```json
 {
@@ -21,11 +23,11 @@ throw new RpcException('Invalid credentials.');
 
 ```
 
-#### 过滤器
+#### Filters
 
-微服务异常过滤器的行为与 HTTP 异常过滤器类似，只有一个小区别。`catch()` 方法必须返回一个 `Observable`。
+Microservice exception filters behave similarly to HTTP exception filters, with one small difference. The `catch()` method must return an `Observable`.
 
- ```typescript title="rpc-exception.filter.ts"
+```typescript
 import { Catch, RpcExceptionFilter, ArgumentsHost } from '@nestjs/common';
 import { Observable, throwError } from 'rxjs';
 import { RpcException } from '@nestjs/microservices';
@@ -39,11 +41,9 @@ export class ExceptionFilter implements RpcExceptionFilter<RpcException> {
 
 ```
 
-:::warning 警告
-使用[混合应用](/faq/hybrid-application)时，全局微服务异常过滤器默认未启用。
-:::
+> warning **Warning** Global microservice exception filters aren't enabled by default when using a [hybrid application](/faq/hybrid-application).
 
-以下示例使用了手动实例化的方法作用域过滤器。与基于 HTTP 的应用类似，您也可以使用控制器作用域过滤器（即在控制器类前添加 `@UseFilters()` 装饰器）。
+The following example uses a manually instantiated method-scoped filter. Just as with HTTP based applications, you can also use controller-scoped filters (i.e., prefix the controller class with a `@UseFilters()` decorator).
 
 ```typescript
 @UseFilters(new ExceptionFilter())
@@ -54,11 +54,11 @@ accumulate(data: number[]): number {
 
 ```
 
-#### 继承
+#### Inheritance
 
-通常，您会创建完全自定义的异常过滤器来满足应用程序需求。但在某些情况下，您可能希望直接扩展**核心异常过滤器** ，并根据特定因素覆盖其行为。
+Typically, you'll create fully customized exception filters crafted to fulfill your application requirements. However, there might be use-cases when you would like to simply extend the **core exception filter**, and override the behavior based on certain factors.
 
-要将异常处理委托给基础过滤器，需要扩展 `BaseExceptionFilter` 并调用继承的 `catch()` 方法。
+In order to delegate exception processing to the base filter, you need to extend `BaseExceptionFilter` and call the inherited `catch()` method.
 
 ```typescript
 import { Catch, ArgumentsHost } from '@nestjs/common';
@@ -73,4 +73,4 @@ export class AllExceptionsFilter extends BaseRpcExceptionFilter {
 
 ```
 
-上述实现仅是一个展示方法的框架。您对扩展异常过滤器的实现将包含您定制的**业务逻辑** （例如处理各种条件）。
+The above implementation is just a shell demonstrating the approach. Your implementation of the extended exception filter would include your tailored **business logic** (e.g., handling various conditions).

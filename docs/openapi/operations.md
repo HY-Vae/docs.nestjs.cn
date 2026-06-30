@@ -1,10 +1,14 @@
-### 操作
+<!-- 此文件从 content/openapi/operations.md 自动生成，请勿直接修改此文件 -->
+<!-- 生成时间: 2026-06-30T03:12:44.956Z -->
+<!-- 源文件: content/openapi/operations.md -->
 
-在 OpenAPI 术语中，路径是您的 API 暴露的端点（资源），例如 `/users` 或 `/reports/summary`，操作是用于操作这些路径的 HTTP 方法，例如 `GET`、`POST` 或 `DELETE`。
+### Operations
 
-#### 标签
+In OpenAPI terms, paths are endpoints (resources), such as `/users` or `/reports/summary`, that your API exposes, and operations are the HTTP methods used to manipulate these paths, such as `GET`, `POST` or `DELETE`.
 
-要将控制器附加到特定标签，请使用 `@ApiTags(...tags)` 装饰器。
+#### Tags
+
+To attach a controller to a specific tag, use the `@ApiTags(...tags)` decorator.
 
 ```typescript
 @ApiTags('cats')
@@ -13,9 +17,25 @@ export class CatsController {}
 
 ```
 
-#### 请求头
+OpenAPI 3.2 extends the Tag Object so that tags can be organized into a hierarchy and annotated with a hint about how they should be presented. To declare these relationships, define the tags up front with `DocumentBuilder` and pass the `parent` and `kind` options to `addTag()`:
 
-要定义作为请求一部分的预期自定义请求头，请使用 `@ApiHeader()`。
+```typescript
+const config = new DocumentBuilder()
+  .setOpenAPIVersion('3.2.0')
+  .addTag('Animals', 'Everything about animals', undefined, { kind: 'nav' })
+  .addTag('Cats', 'Cat operations', undefined, { parent: 'Animals' })
+  .addTag('Dogs', 'Dog operations', undefined, { parent: 'Animals' })
+  .build();
+
+```
+
+The `parent` option references another tag by name, and `kind` is a free-form, machine-readable string that hints how the tag should be used — commonly `nav`, `badge`, or `audience`.
+
+> warning **Warning** The `parent` and `kind` fields belong to the OpenAPI 3.2 Tag Object. You must call `setOpenAPIVersion('3.2.0')`, otherwise the generated document still declares `openapi: 3.0.0` and strict validators will reject these fields. Hierarchy fields can only be defined through `DocumentBuilder.addTag()`; setting them on the `@ApiTags()` decorator has no effect.
+
+#### Headers
+
+To define custom headers that are expected as part of the request, use `@ApiHeader()`.
 
 ```typescript
 @ApiHeader({
@@ -27,9 +47,9 @@ export class CatsController {}
 
 ```
 
-#### 响应
+#### Responses
 
-要定义自定义 HTTP 响应，请使用 `@ApiResponse()` 装饰器。
+To define a custom HTTP response, use the `@ApiResponse()` decorator.
 
 ```typescript
 @Post()
@@ -41,7 +61,7 @@ async create(@Body() createCatDto: CreateCatDto) {
 
 ```
 
-Nest 提供了一组继承自 `@ApiResponse` 装饰器的简写 **API 响应** 装饰器：
+Nest provides a set of short-hand **API response** decorators that inherit from the `@ApiResponse` decorator:
 
 - `@ApiOkResponse()`
 - `@ApiCreatedResponse()`
@@ -80,7 +100,7 @@ async create(@Body() createCatDto: CreateCatDto) {
 
 ```
 
-要为请求指定返回模型，我们必须创建一个类并使用 `@ApiProperty()` 装饰器注释所有属性。
+To specify a return model for a request, we must create a class and annotate all properties with the `@ApiProperty()` decorator.
 
 ```typescript
 export class Cat {
@@ -99,7 +119,7 @@ export class Cat {
 
 ```
 
-然后可以将 `Cat` 模型与响应装饰器的 `type` 属性结合使用。
+Then the `Cat` model can be used in combination with the `type` property of the response decorator.
 
 ```typescript
 @ApiTags('cats')
@@ -117,11 +137,11 @@ export class CatsController {
 
 ```
 
-让我们打开浏览器并验证生成的 `Cat` 模型：
+Let's open the browser and verify the generated `Cat` model:
 
 <figure><img src="/assets/swagger-response-type.png" /></figure>
 
-与其为每个端点或控制器单独定义响应，您可以使用 `DocumentBuilder` 类为所有端点定义全局响应。当您想为应用程序中的所有端点定义全局响应（例如，对于 `401 Unauthorized` 或 `500 Internal Server Error` 等错误）时，此方法很有用。
+Instead of defining responses for each endpoint or controller individually, you can define a global response for all endpoints using the `DocumentBuilder` class. This approach is useful when you want to define a global response for all endpoints in your application (e.g., for errors like `401 Unauthorized` or `500 Internal Server Error`).
 
 ```typescript
 const config = new DocumentBuilder()
@@ -129,14 +149,14 @@ const config = new DocumentBuilder()
     status: 500,
     description: 'Internal server error',
   })
-  // 其他配置
+  // other configurations
   .build();
 
 ```
 
-#### 文件上传
+#### File upload
 
-您可以使用 `@ApiBody` 装饰器结合 `@ApiConsumes()` 为特定方法启用文件上传。以下是使用[文件上传](/techniques/file-upload)技术的完整示例：
+You can enable file upload for a specific method with the `@ApiBody` decorator together with `@ApiConsumes()`. Here's a full example using the [File Upload](/techniques/file-upload) technique:
 
 ```typescript
 @UseInterceptors(FileInterceptor('file'))
@@ -149,7 +169,7 @@ uploadFile(@UploadedFile() file: Express.Multer.File) {}
 
 ```
 
-其中 `FileUploadDto` 定义如下：
+Where `FileUploadDto` is defined as follows:
 
 ```typescript
 class FileUploadDto {
@@ -159,7 +179,7 @@ class FileUploadDto {
 
 ```
 
-要处理多个文件上传，您可以如下定义 `FilesUploadDto`：
+To handle multiple files uploading, you can define `FilesUploadDto` as follows:
 
 ```typescript
 class FilesUploadDto {
@@ -169,18 +189,18 @@ class FilesUploadDto {
 
 ```
 
-#### 扩展
+#### Extensions
 
-要向请求添加扩展，请使用 `@ApiExtension()` 装饰器。扩展名必须以 `x-` 为前缀。
+To add an Extension to a request use the `@ApiExtension()` decorator. The extension name must be prefixed with `x-`.
 
 ```typescript
 @ApiExtension('x-foo', { hello: 'world' })
 
 ```
 
-#### 高级：泛型 `ApiResponse`
+#### Advanced: Generic `ApiResponse`
 
-通过提供[原始定义](/openapi/types-and-parameters#raw-definitions)的能力，我们可以为 Swagger UI 定义泛型模式。假设我们有以下 DTO：
+With the ability to provide [Raw Definitions](/openapi/types-and-parameters#raw-definitions), we can define Generic schema for Swagger UI. Assume we have the following DTO:
 
 ```ts
 export class PaginatedDto<TData> {
@@ -198,7 +218,7 @@ export class PaginatedDto<TData> {
 
 ```
 
-我们跳过装饰 `results`，因为稍后我们将为其提供原始定义。现在，让我们定义另一个 DTO 并将其命名为 `CatDto`，如下所示：
+We skip decorating `results` as we will be providing a raw definition for it later. Now, let's define another DTO and name it, for example, `CatDto`, as follows:
 
 ```ts
 export class CatDto {
@@ -214,7 +234,7 @@ export class CatDto {
 
 ```
 
-有了这些，我们可以定义一个 `PaginatedDto<CatDto>` 响应，如下所示：
+With this in place, we can define a `PaginatedDto<CatDto>` response, as follows:
 
 ```ts
 @ApiOkResponse({
@@ -236,12 +256,12 @@ async findAll(): Promise<PaginatedDto<CatDto>> {}
 
 ```
 
-在此示例中，我们指定响应将具有 `PaginatedDto` 的 allOf，并且 `results` 属性将是 `Array<CatDto>` 类型。
+In this example, we specify that the response will have allOf `PaginatedDto` and the `results` property will be of type `Array<CatDto>`.
 
-- `getSchemaPath()` 函数返回给定模型的 OpenAPI 规范文件中的 OpenAPI Schema 路径。
-- `allOf` 是 OAS 3 提供的概念，用于涵盖各种继承相关用例。
+- `getSchemaPath()` function that returns the OpenAPI Schema path from within the OpenAPI Spec File for a given model.
+- `allOf` is a concept that OAS 3 provides to cover various Inheritance related use-cases.
 
-最后，由于 `PaginatedDto` 没有被任何控制器直接引用，`SwaggerModule` 尚无法生成相应的模型定义。在这种情况下，我们必须将其添加为[额外模型](/openapi/types-and-parameters#extra-models)。例如，我们可以在控制器级别使用 `@ApiExtraModels()` 装饰器，如下所示：
+Lastly, since `PaginatedDto` is not directly referenced by any controller, the `SwaggerModule` will not be able to generate a corresponding model definition just yet. In this case, we must add it as an [Extra Model](/openapi/types-and-parameters#extra-models). For example, we can use the `@ApiExtraModels()` decorator on the controller level, as follows:
 
 ```ts
 @Controller('cats')
@@ -250,7 +270,7 @@ export class CatsController {}
 
 ```
 
-如果您现在运行 Swagger，为此特定端点生成的 `swagger.json` 应该有以下定义的响应：
+If you run Swagger now, the generated `swagger.json` for this specific endpoint should have the following response defined:
 
 ```json
 "responses": {
@@ -279,7 +299,7 @@ export class CatsController {}
 
 ```
 
-为了使其可重用，我们可以为 `PaginatedDto` 创建自定义装饰器，如下所示：
+To make it reusable, we can create a custom decorator for `PaginatedDto`, as follows:
 
 ```ts
 export const ApiPaginatedResponse = <TModel extends Type<any>>(
@@ -307,13 +327,11 @@ export const ApiPaginatedResponse = <TModel extends Type<any>>(
 
 ```
 
-:::info 提示
-`Type<any>` 接口和 `applyDecorators` 函数是从 `@nestjs/common` 包导入的。
-:::
+> info **Hint** `Type<any>` interface and `applyDecorators` function are imported from the `@nestjs/common` package.
 
-为了确保 `SwaggerModule` 为我们的模型生成定义，我们必须将其添加为额外模型，就像我们之前在控制器中对 `PaginatedDto` 所做的那样。
+To ensure that `SwaggerModule` will generate a definition for our model, we must add it as an extra model, like we did earlier with the `PaginatedDto` in the controller.
 
-有了这些，我们可以在端点上使用自定义 `@ApiPaginatedResponse()` 装饰器：
+With this in place, we can use the custom `@ApiPaginatedResponse()` decorator on our endpoint:
 
 ```ts
 @ApiPaginatedResponse(CatDto)
@@ -321,7 +339,7 @@ async findAll(): Promise<PaginatedDto<CatDto>> {}
 
 ```
 
-对于客户端生成工具，这种方法在如何为客户端生成 `PaginatedResponse<TModel>` 方面存在歧义。以下代码片段是上述 `GET /` 端点的客户端生成器结果示例。
+For client generation tools, this approach poses an ambiguity in how the `PaginatedResponse<TModel>` is being generated for the client. The following snippet is an example of a client generator result for the above `GET /` endpoint.
 
 ```typescript
 // Angular
@@ -329,7 +347,7 @@ findAll(): Observable<{ total: number, limit: number, offset: number, results: C
 
 ```
 
-如您所见，这里的**返回类型**是模糊的。要解决此问题，您可以为 `ApiPaginatedResponse` 的 `schema` 添加 `title` 属性：
+As you can see, the **Return Type** here is ambiguous. To workaround this issue, you can add a `title` property to the `schema` for `ApiPaginatedResponse`:
 
 ```typescript
 export const ApiPaginatedResponse = <TModel extends Type<any>>(
@@ -349,7 +367,7 @@ export const ApiPaginatedResponse = <TModel extends Type<any>>(
 
 ```
 
-现在客户端生成器工具的结果将变为：
+Now the result of the client generator tool will become:
 
 ```ts
 // Angular

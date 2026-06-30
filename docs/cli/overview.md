@@ -1,43 +1,41 @@
 <!-- 此文件从 content/cli/overview.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-03-12T13:42:20.319Z -->
+<!-- 生成时间: 2026-06-30T03:12:44.952Z -->
 <!-- 源文件: content/cli/overview.md -->
 
-### 概述
+### Overview
 
-[Nest CLI](https://github.com/nestjs/nest-cli) 是一个命令行界面工具，帮助你初始化、开发和维护你的 Nest 应用程序。它以多种方式提供帮助，包括搭建项目、在开发模式下提供服务，以及构建和打包应用程序以进行生产分发。它体现了最佳实践的架构模式，以鼓励构建结构良好的应用程序。
+The [Nest CLI](https://github.com/nestjs/nest-cli) is a command-line interface tool that helps you to initialize, develop, and maintain your Nest applications. It assists in multiple ways, including scaffolding the project, serving it in development mode, and building and bundling the application for production distribution. It embodies best-practice architectural patterns to encourage well-structured apps.
 
-#### 安装
+#### Installation
 
-**注意**：在本指南中，我们描述使用 [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) 安装包，包括 Nest CLI。你可以自行决定使用其他包管理器。使用 npm，你有几个选项可用于管理操作系统命令行如何解析 `nest` CLI 二进制文件的位置。在这里，我们描述使用 `-g` 选项全局安装 `nest` 二进制文件。这提供了一定的便利性，也是我们在整个文档中假设的方法。请注意，全局安装**任何** `npm` 包都让用户有责任确保他们运行的是正确的版本。这也意味着如果你有不同的项目，每个项目都将运行**相同**版本的 CLI。一个合理的替代方法是使用 [npx](https://github.com/npm/cli/blob/latest/docs/lib/content/commands/npx.md) 程序，它内置于 `npm` cli（或其他包管理器的类似功能）中，以确保你运行 Nest CLI 的**托管版本**。我们建议你查阅 [npx 文档](https://github.com/npm/cli/blob/latest/docs/lib/content/commands/npx.md)和/或你的 DevOps 支持人员以获取更多信息。
+**Note**: In this guide we describe using [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) to install packages, including the Nest CLI. Other package managers may be used at your discretion. With npm, you have several options available for managing how your OS command line resolves the location of the `nest` CLI binary file. Here, we describe installing the `nest` binary globally using the `-g` option. This provides a measure of convenience, and is the approach we assume throughout the documentation. Note that installing **any** `npm` package globally leaves the responsibility of ensuring they're running the correct version up to the user. It also means that if you have different projects, each will run the **same** version of the CLI. A reasonable alternative is to use the [npx](https://github.com/npm/cli/blob/latest/docs/lib/content/commands/npx.md) program, built into the `npm` cli (or similar features with other package managers) to ensure that you run a **managed version** of the Nest CLI. We recommend you consult the [npx documentation](https://github.com/npm/cli/blob/latest/docs/lib/content/commands/npx.md) and/or your DevOps support staff for more information.
 
-使用 `npm install -g` 命令全局安装 CLI（有关全局安装的详细信息，请参阅上面的**注意**）。
+Install the CLI globally using the `npm install -g` command (see the **Note** above for details about global installs).
 
 ```bash
 $ npm install -g @nestjs/cli
 
 ```
 
-:::info 提示
-或者，你可以使用此命令 `npx @nestjs/cli@latest` 而无需全局安装 CLI。
-:::
+> info **Hint** Alternatively, you can use this command `npx @nestjs/cli@latest` without installing the cli globally.
 
-#### 基本工作流程
+#### Basic workflow
 
-安装后，你可以通过 `nest` 可执行文件直接从操作系统命令行调用 CLI 命令。通过输入以下内容查看可用的 `nest` 命令：
+Once installed, you can invoke CLI commands directly from your OS command line through the `nest` executable. See the available `nest` commands by entering the following:
 
 ```bash
 $ nest --help
 
 ```
 
-使用以下构造获取单个命令的帮助。在下面的示例中，将任何命令（如 `new`、`add` 等）替换为 `generate`，以获取该命令的详细帮助：
+Get help on an individual command using the following construct. Substitute any command, like `new`, `add`, etc., where you see `generate` in the example below to get detailed help on that command:
 
 ```bash
 $ nest generate --help
 
 ```
 
-要在开发模式下创建、构建和运行一个新的基本 Nest 项目，转到应该是新项目父级的文件夹，并运行以下命令：
+To create, build and run a new basic Nest project in development mode, go to the folder that should be the parent of your new project, and run the following commands:
 
 ```bash
 $ nest new my-nest-project
@@ -46,81 +44,79 @@ $ npm run start:dev
 
 ```
 
-在浏览器中，打开 [http://localhost:3000](http://localhost:3000) 查看新应用程序运行。当你更改任何源文件时，应用程序将自动重新编译和重新加载。
+In your browser, open [http://localhost:3000](http://localhost:3000) to see the new application running. The app will automatically recompile and reload when you change any of the source files.
 
-:::info 提示
-我们建议使用 [SWC 构建器](/recipes/swc) 以获得更快的构建速度（比默认的 TypeScript 编译器快 10 倍）。
-:::
+> info **Hint** We recommend using the [SWC builder](/recipes/swc) for faster builds (10x more performant than the default TypeScript compiler).
 
-#### 项目结构
+#### Project structure
 
-当你运行 `nest new` 时，Nest 通过创建新文件夹并填充一组初始文件来生成样板应用程序结构。你可以继续在此默认结构中工作，添加新组件，如本文档中所述。我们将 `nest new` 生成的项目结构称为**标准模式**。Nest 还支持另一种用于管理多个项目和库的结构，称为 **monorepo 模式**。
+When you run `nest new`, Nest generates a boilerplate application structure by creating a new folder and populating an initial set of files. You can continue working in this default structure, adding new components, as described throughout this documentation. We refer to the project structure generated by `nest new` as **standard mode**. Nest also supports an alternate structure for managing multiple projects and libraries called **monorepo mode**.
 
-除了关于**构建**过程如何工作的一些特定考虑事项（本质上，monorepo 模式简化了有时可能由 monorepo 风格的项目结构产生的构建复杂性）和内置[库](/cli/libraries)支持外，Nest 的其余功能以及本文档同样适用于标准和 monorepo 模式项目结构。事实上，你可以随时在将来轻松地从标准模式切换到 monorepo 模式，因此你可以在学习 Nest 时安全地推迟此决定。
+Aside from a few specific considerations around how the **build** process works (essentially, monorepo mode simplifies build complexities that can sometimes arise from monorepo-style project structures), and built-in [library](/cli/libraries) support, the rest of the Nest features, and this documentation, apply equally to both standard and monorepo mode project structures. In fact, you can easily switch from standard mode to monorepo mode at any time in the future, so you can safely defer this decision while you're still learning about Nest.
 
-你可以使用任一模式来管理多个项目。以下是差异的快速摘要：
+You can use either mode to manage multiple projects. Here's a quick summary of the differences:
 
-| 功能 | 标准模式 | Monorepo 模式 |
-| --- | --- | --- |
-| 多个项目 | 独立的文件系统结构 | 单一文件系统结构 |
-| `node_modules` 和 `package.json` | 独立实例 | 在 monorepo 中共享 |
-| 默认编译器 | `tsc` | webpack |
-| 编译器设置 | 单独指定 | 可以按项目覆盖的 Monorepo 默认值 |
-| 配置文件如 `eslint.config.mjs`、`.prettierrc` 等 | 单独指定 | 在 monorepo 中共享 |
-| `nest build` 和 `nest start` 命令 | 目标默认自动为上下文中的（唯一）项目 | 目标默认为 monorepo 中的**默认项目** |
-| 库 | 手动管理，通常通过 npm 打包 | 内置支持，包括路径管理和打包 |
+| Feature                                                    | Standard Mode                                                      | Monorepo Mode                                              |
+| ---------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------- |
+| Multiple projects                                          | Separate file system structure                                     | Single file system structure                               |
+| `node_modules` & `package.json`                            | Separate instances                                                 | Shared across monorepo                                     |
+| Default compiler                                           | `tsc`                                                              | webpack                                                    |
+| Compiler settings                                          | Specified separately                                               | Monorepo defaults that can be overridden per project       |
+| Config files like `eslint.config.mjs`, `.prettierrc`, etc. | Specified separately                                               | Shared across monorepo                                     |
+| `nest build` and `nest start` commands                     | Target defaults automatically to the (only) project in the context | Target defaults to the **default project** in the monorepo |
+| Libraries                                                  | Managed manually, usually via npm packaging                        | Built-in support, including path management and bundling   |
 
-阅读[工作区](/cli/workspaces)和[库](/cli/libraries)部分以获取更详细的信息，帮助你决定哪种模式最适合你。
+Read the sections on [Workspaces](/cli/monorepo) and [Libraries](/cli/libraries) for more detailed information to help you decide which mode is most suitable for you.
 
 <app-banner-courses></app-banner-courses>
 
-#### CLI 命令语法
+#### CLI command syntax
 
-所有 `nest` 命令遵循相同的格式：
+All `nest` commands follow the same format:
 
 ```bash
 nest commandOrAlias requiredArg [optionalArg] [options]
 
 ```
 
-例如：
+For example:
 
 ```bash
 $ nest new my-nest-project --dry-run
 
 ```
 
-这里，`new` 是 _commandOrAlias_。`new` 命令有一个别名 `n`。`my-nest-project` 是 _requiredArg_。如果命令行中未提供 _requiredArg_，`nest` 会提示输入。此外，`--dry-run` 有一个等效的简写形式 `-d`。考虑到这一点，以下命令与上述命令等效：
+Here, `new` is the _commandOrAlias_. The `new` command has an alias of `n`. `my-nest-project` is the _requiredArg_. If a _requiredArg_ is not supplied on the command line, `nest` will prompt for it. Also, `--dry-run` has an equivalent short-hand form `-d`. With this in mind, the following command is the equivalent of the above:
 
 ```bash
 $ nest n my-nest-project -d
 
 ```
 
-大多数命令和一些选项都有别名。尝试运行 `nest new --help` 查看这些选项和别名，并确认你对上述构造的理解。
+Most commands, and some options, have aliases. Try running `nest new --help` to see these options and aliases, and to confirm your understanding of the above constructs.
 
-#### 命令概述
+#### Command overview
 
-对以下任何命令运行 `nest <command> --help` 以查看命令特定的选项。
+Run `nest <command> --help` for any of the following commands to see command-specific options.
 
-有关每个命令的详细描述，请参阅[用法](/cli/usages)。
+See [usage](/cli/usages) for detailed descriptions for each command.
 
-| 命令 | 别名 | 描述 |
-| --- | --- | --- |
-| `new` | `n` | 搭建一个新的_标准模式_应用程序，包含运行所需的所有样板文件。 |
-| `generate` | `g` | 根据原理生成和/或修改文件。 |
-| `build` |  | 将应用程序或工作区编译到输出文件夹。 |
-| `start` |  | 编译并运行应用程序（或工作区中的默认项目）。 |
-| `add` |  | 导入已打包为 **nest 库**的库，运行其安装原理。 |
-| `info` | `i` | 显示有关已安装的 nest 包和其他有用的系统信息。 |
+| Command    | Alias | Description                                                                                    |
+| ---------- | ----- | ---------------------------------------------------------------------------------------------- |
+| `new`      | `n`   | Scaffolds a new _standard mode_ application with all boilerplate files needed to run.          |
+| `generate` | `g`   | Generates and/or modifies files based on a schematic.                                          |
+| `build`    |       | Compiles an application or workspace into an output folder.                                    |
+| `start`    |       | Compiles and runs an application (or default project in a workspace).                          |
+| `add`      |       | Imports a library that has been packaged as a **nest library**, running its install schematic. |
+| `info`     | `i`   | Displays information about installed nest packages and other helpful system info.              |
 
-#### 要求
+#### Requirements
 
-Nest CLI 需要使用[国际化支持](https://nodejs.org/api/intl.html) (ICU) 构建的 Node.js 二进制文件，例如 [Node.js 项目页面](https://nodejs.org/en/download)的官方二进制文件。如果你遇到与 ICU 相关的错误，请检查你的二进制文件是否满足此要求。
+Nest CLI requires a Node.js binary built with [internationalization support](https://nodejs.org/api/intl.html) (ICU), such as the official binaries from the [Node.js project page](https://nodejs.org/en/download). If you encounter errors related to ICU, check that your binary meets this requirement.
 
 ```bash
 node -p process.versions.icu
 
 ```
 
-如果命令打印 `undefined`，则你的 Node.js 二进制文件没有国际化支持。
+If the command prints `undefined`, your Node.js binary has no internationalization support.
