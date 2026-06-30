@@ -1,50 +1,48 @@
 <!-- 此文件从 content/fundamentals/execution-context.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-03-12T12:02:29.213Z -->
+<!-- 生成时间: 2026-06-30T03:12:44.967Z -->
 <!-- 源文件: content/fundamentals/execution-context.md -->
 
-### 执行上下文
+### Execution context
 
-Nest 提供了多个实用类，帮助您编写跨多个应用程序上下文（例如，Nest HTTP 服务器、微服务和 WebSocket 应用程序上下文）运行的应用程序。这些实用类提供了当前执行上下文的信息，可以用来构建通用的[守卫](/guards)、[过滤器](/exception-filters)和[拦截器](/interceptors)，它们可以在广泛的控制器、方法和执行上下文中工作。
+Nest provides several utility classes that help make it easy to write applications that function across multiple application contexts (e.g., Nest HTTP server-based, microservices and WebSockets application contexts). These utilities provide information about the current execution context which can be used to build generic [guards](/guards), [filters](/exception-filters), and [interceptors](/interceptors) that can work across a broad set of controllers, methods, and execution contexts.
 
-我们在本章中介绍两个这样的类：`ArgumentsHost` 和 `ExecutionContext`。
+We cover two such classes in this chapter: `ArgumentsHost` and `ExecutionContext`.
 
-#### ArgumentsHost 类
+#### ArgumentsHost class
 
-`ArgumentsHost` 类提供了检索传递给处理程序的参数的方法。它允许选择适当的上下文（例如，HTTP、RPC（微服务）或 WebSockets）来检索参数。框架提供了 `ArgumentsHost` 的实例，通常作为 `host` 参数引用，在您可能想要访问它的地方。例如，[异常过滤器](https://docs.nestjs.com/exception-filters#arguments-host)的 `catch()` 方法使用 `ArgumentsHost` 实例调用。
+The `ArgumentsHost` class provides methods for retrieving the arguments being passed to a handler. It allows choosing the appropriate context (e.g., HTTP, RPC (microservice), or WebSockets) to retrieve the arguments from. The framework provides an instance of `ArgumentsHost`, typically referenced as a `host` parameter, in places where you may want to access it. For example, the `catch()` method of an [exception filter](/exception-filters#arguments-host) is called with an `ArgumentsHost`instance.
 
-`ArgumentsHost` 简单地充当处理程序参数的抽象。例如，对于 HTTP 服务器应用程序（当使用 `@nestjs/platform-express` 时），`host` 对象封装了 Express 的 `[request, response, next]` 数组，其中 `request` 是请求对象，`response` 是响应对象，`next` 是控制应用程序请求-响应周期的函数。另一方面，对于 [GraphQL](/graphql/quick-start) 应用程序，`host` 对象包含 `[root, args, context, info]` 数组。
+`ArgumentsHost` simply acts as an abstraction over a handler's arguments. For example, for HTTP server applications (when `@nestjs/platform-express` is being used), the `host` object encapsulates Express's `[request, response, next]` array, where `request` is the request object, `response` is the response object, and `next` is a function that controls the application's request-response cycle. On the other hand, for [GraphQL](/graphql/quick-start) applications, the `host` object contains the `[root, args, context, info]` array.
 
-#### 当前应用程序上下文
+#### Current application context
 
-在构建旨在跨多个应用程序上下文运行的通用[守卫](/guards)、[过滤器](/exception-filters)和[拦截器](/interceptors)时，我们需要一种方法来确定我们的方法当前正在运行的应用程序类型。使用 `ArgumentsHost` 的 `getType()` 方法：
+When building generic [guards](/guards), [filters](/exception-filters), and [interceptors](/interceptors) which are meant to run across multiple application contexts, we need a way to determine the type of application that our method is currently running in. Do this with the `getType()` method of `ArgumentsHost`:
 
 ```typescript
 if (host.getType() === 'http') {
-  // 执行仅在常规 HTTP 请求（REST）上下文中重要的操作
+  // do something that is only important in the context of regular HTTP requests (REST)
 } else if (host.getType() === 'rpc') {
-  // 执行仅在微服务请求上下文中重要的操作
+  // do something that is only important in the context of Microservice requests
 } else if (host.getType<GqlContextType>() === 'graphql') {
-  // 执行仅在 GraphQL 请求上下文中重要的操作
+  // do something that is only important in the context of GraphQL requests
 }
 
 ```
 
-::: info 提示 
- 从 `@nestjs/graphql` 包导入。
-:::
+> info **Hint** The `GqlContextType` is imported from the `@nestjs/graphql` package.
 
-有了可用的应用程序类型，我们可以编写更通用的组件，如下所示。
+With the application type available, we can write more generic components, as shown below.
 
-#### 主机处理程序参数
+#### Host handler arguments
 
-要检索传递给处理程序的参数数组，一种方法是使用主机对象的 `getArgs()` 方法。
+To retrieve the array of arguments being passed to the handler, one approach is to use the host object's `getArgs()` method.
 
 ```typescript
 const [req, res, next] = host.getArgs();
 
 ```
 
-您可以使用 `getArgByIndex()` 方法按索引提取特定参数：
+You can pluck a particular argument by index using the `getArgByIndex()` method:
 
 ```typescript
 const request = host.getArgByIndex(0);
@@ -52,25 +50,25 @@ const response = host.getArgByIndex(1);
 
 ```
 
-在这些示例中，我们按索引检索请求和响应对象，这通常不建议，因为它将应用程序耦合到特定的执行上下文。相反，您可以使用 `host` 对象的实用方法之一切换到适合您应用程序的应用程序上下文，从而使代码更健壮和可重用。上下文切换实用方法如下所示。
+In these examples we retrieved the request and response objects by index, which is not typically recommended as it couples the application to a particular execution context. Instead, you can make your code more robust and reusable by using one of the `host` object's utility methods to switch to the appropriate application context for your application. The context switch utility methods are shown below.
 
 ```typescript
 /**
- * 切换到 RPC 上下文。
+ * Switch context to RPC.
  */
 switchToRpc(): RpcArgumentsHost;
 /**
- * 切换到 HTTP 上下文。
+ * Switch context to HTTP.
  */
 switchToHttp(): HttpArgumentsHost;
 /**
- * 切换到 WebSockets 上下文。
+ * Switch context to WebSockets.
  */
 switchToWs(): WsArgumentsHost;
 
 ```
 
-让我们使用 `switchToHttp()` 方法重写前面的示例。`host.switchToHttp()` 辅助调用返回适合 HTTP 应用程序上下文的 `HttpArgumentsHost` 对象。`HttpArgumentsHost` 对象有两个有用的方法，我们可以用来提取所需的对象。在这种情况下，我们还使用 Express 类型断言返回原生 Express 类型对象：
+Let's rewrite the previous example using the `switchToHttp()` method. The `host.switchToHttp()` helper call returns an `HttpArgumentsHost` object that is appropriate for the HTTP application context. The `HttpArgumentsHost` object has two useful methods we can use to extract the desired objects. We also use the Express type assertions in this case to return native Express typed objects:
 
 ```typescript
 const ctx = host.switchToHttp();
@@ -79,58 +77,59 @@ const response = ctx.getResponse<Response>();
 
 ```
 
-同样，`WsArgumentsHost` 和 `RpcArgumentsHost` 有方法在微服务和 WebSockets 上下文中返回适当的对象。以下是 `WsArgumentsHost` 的方法：
+Similarly `WsArgumentsHost` and `RpcArgumentsHost` have methods to return appropriate objects in the microservices and WebSockets contexts. Here are the methods for `WsArgumentsHost`:
 
 ```typescript
 export interface WsArgumentsHost {
   /**
-   * 返回数据对象。
+   * Returns the data object.
    */
   getData<T>(): T;
   /**
-   * 返回客户端对象。
+   * Returns the client object.
    */
   getClient<T>(): T;
 }
 
 ```
 
-以下是 `RpcArgumentsHost` 的方法：
+Following are the methods for `RpcArgumentsHost`:
 
 ```typescript
 export interface RpcArgumentsHost {
   /**
-   * 返回数据对象。
+   * Returns the data object.
    */
   getData<T>(): T;
 
   /**
-   * 返回上下文对象。
+   * Returns the context object.
    */
   getContext<T>(): T;
 }
 
 ```
 
-#### ExecutionContext 类
+#### ExecutionContext class
 
-`ExecutionContext` 扩展了 `ArgumentsHost`，提供了有关当前执行过程的额外详细信息。与 `ArgumentsHost` 一样，Nest 在您可能需要它的地方提供 `ExecutionContext` 实例，例如在[守卫](https://docs.nestjs.com/guards#execution-context)的 `canActivate()` 方法和[拦截器](https://docs.nestjs.com/interceptors#execution-context)的 `intercept()` 方法中。它提供以下方法：
+`ExecutionContext` extends `ArgumentsHost`, providing additional details about the current execution process. Like `ArgumentsHost`, Nest provides an instance of `ExecutionContext` in places you may need it, such as in the `canActivate()` method of a [guard](/guards#execution-context) and the `intercept()` method of an [interceptor](/interceptors#execution-context). It provides the following methods:
 
 ```typescript
 export interface ExecutionContext extends ArgumentsHost {
   /**
-   * 返回当前处理程序所属的控制器类类型。
+   * Returns the type of the controller class which the current handler belongs to.
    */
   getClass<T>(): Type<T>;
   /**
-   * 返回将在请求管道中调用的下一个处理程序（方法）的引用。
+   * Returns a reference to the handler (method) that will be invoked next in the
+   * request pipeline.
    */
   getHandler(): Function;
 }
 
 ```
 
-`getHandler()` 方法返回即将调用的处理程序的引用。`getClass()` 方法返回此特定处理程序所属的 `Controller` 类的类型。例如，在 HTTP 上下文中，如果当前处理的请求是绑定到 `CatsController` 上 `create()` 方法的 `POST` 请求，`getHandler()` 返回 `create()` 方法的引用，`getClass()` 返回 `CatsController` **类**（不是实例）。
+The `getHandler()` method returns a reference to the handler about to be invoked. The `getClass()` method returns the type of the `Controller` class which this particular handler belongs to. For example, in an HTTP context, if the currently processed request is a `POST` request, bound to the `create()` method on the `CatsController`, `getHandler()` returns a reference to the `create()` method and `getClass()` returns the `CatsController` **class** (not instance).
 
 ```typescript
 const methodKey = ctx.getHandler().name; // "create"
@@ -138,15 +137,15 @@ const className = ctx.getClass().name; // "CatsController"
 
 ```
 
-访问当前类和处理程序方法的引用的能力提供了极大的灵活性。最重要的是，它给了我们从守卫或拦截器内部访问通过 `Reflector#createDecorator` 创建的装饰器或内置 `@SetMetadata()` 装饰器设置的元数据的机会。我们在下面介绍这个用例。
+The ability to access references to both the current class and handler method provides great flexibility. Most importantly, it gives us the opportunity to access the metadata set through either decorators created via `Reflector#createDecorator` or the built-in `@SetMetadata()` decorator from within guards or interceptors. We cover this use case below.
 
 <app-banner-enterprise></app-banner-enterprise>
 
-#### 反射和元数据
+#### Reflection and metadata
 
-Nest 提供了通过 `Reflector#createDecorator` 方法创建的装饰器和内置 `@SetMetadata()` 装饰器将**自定义元数据**附加到路由处理程序的能力。在本节中，让我们比较这两种方法，看看如何从守卫或拦截器内部访问元数据。
+Nest provides the ability to attach **custom metadata** to route handlers through decorators created via `Reflector#createDecorator` method, and the built-in `@SetMetadata()` decorator. In this section, let's compare the two approaches and see how to access the metadata from within a guard or interceptor.
 
-要使用 `Reflector#createDecorator` 创建强类型装饰器，我们需要指定类型参数。例如，让我们创建一个接受字符串数组作为参数的 `Roles` 装饰器。
+To create strongly-typed decorators using `Reflector#createDecorator`, we need to specify the type argument. For example, let's create a `Roles` decorator that takes an array of strings as an argument.
 
 ```ts
 import { Reflector } from '@nestjs/core';
@@ -155,9 +154,9 @@ export const Roles = Reflector.createDecorator<string[]>();
 
 ```
 
-这里的 `Roles` 装饰器是一个接受 `string[]` 类型单个参数的函数。
+The `Roles` decorator here is a function that takes a single argument of type `string[]`.
 
-现在，要使用这个装饰器，我们只需用它注释处理程序：
+Now, to use this decorator, we simply annotate the handler with it:
 
 ```typescript
 @Post()
@@ -168,9 +167,9 @@ async create(@Body() createCatDto: CreateCatDto) {
 
 ```
 
-这里我们将 `Roles` 装饰器元数据附加到 `create()` 方法，指示只有具有 `admin` 角色的用户才能访问此路由。
+Here we've attached the `Roles` decorator metadata to the `create()` method, indicating that only users with the `admin` role should be allowed to access this route.
 
-要访问路由的角色（自定义元数据），我们将再次使用 `Reflector` 辅助类。`Reflector` 可以以正常方式注入到类中：
+To access the route's role(s) (custom metadata), we'll use the `Reflector` helper class again. `Reflector` can be injected into a class in the normal way:
 
 ```typescript
 @Injectable()
@@ -180,20 +179,18 @@ export class RolesGuard {
 
 ```
 
-::: info 提示 
-从 `@nestjs/core` 包导入。
-:::
+> info **Hint** The `Reflector` class is imported from the `@nestjs/core` package.
 
-现在，要读取处理程序元数据，使用 `get()` 方法：
+Now, to read the handler metadata, use the `get()` method:
 
 ```typescript
 const roles = this.reflector.get(Roles, context.getHandler());
 
 ```
 
-`Reflector#get` 方法允许我们通过传递两个参数轻松访问元数据：装饰器引用和要从中检索元数据的**上下文**（装饰器目标）。在这个例子中，指定的**装饰器**是 `Roles`（回顾上面的 `roles.decorator.ts` 文件）。上下文由调用 `context.getHandler()` 提供，这导致提取当前处理的路由处理程序的元数据。记住，`getHandler()` 给我们路由处理程序函数的**引用**。
+The `Reflector#get` method allows us to easily access the metadata by passing in two arguments: a decorator reference and a **context** (decorator target) to retrieve the metadata from. In this example, the specified **decorator** is `Roles` (refer back to the `roles.decorator.ts` file above). The context is provided by the call to `context.getHandler()`, which results in extracting the metadata for the currently processed route handler. Remember, `getHandler()` gives us a **reference** to the route handler function.
 
-或者，我们可以通过在控制器级别应用元数据来组织控制器，应用于控制器类中的所有路由。
+Alternatively, we may organize our controller by applying metadata at the controller level, applying to all routes in the controller class.
 
 ```typescript
 @Roles(['admin'])
@@ -202,16 +199,16 @@ export class CatsController {}
 
 ```
 
-在这种情况下，要提取控制器元数据，我们传递 `context.getClass()` 作为第二个参数（提供控制器类作为元数据提取的上下文），而不是 `context.getHandler()`：
+In this case, to extract controller metadata, we pass `context.getClass()` as the second argument (to provide the controller class as the context for metadata extraction) instead of `context.getHandler()`:
 
 ```typescript
 const roles = this.reflector.get(Roles, context.getClass());
 
 ```
 
-鉴于在多个级别提供元数据的能力，您可能需要从多个上下文中提取和合并元数据。`Reflector` 类提供了两个实用方法来帮助解决这个问题。这些方法一次提取**控制器和方法**元数据，并以不同方式组合它们。
+Given the ability to provide metadata at multiple levels, you may need to extract and merge metadata from several contexts. The `Reflector` class provides two utility methods used to help with this. These methods extract **both** controller and method metadata at once, and combine them in different ways.
 
-考虑以下场景，您在两个级别都提供了 `Roles` 元数据。
+Consider the following scenario, where you've supplied `Roles` metadata at both levels.
 
 ```typescript
 @Roles(['user'])
@@ -226,29 +223,29 @@ export class CatsController {
 
 ```
 
-如果您的意图是指定 `'user'` 作为默认角色，并选择性地为某些方法覆盖它，您可能会使用 `getAllAndOverride()` 方法。
+If your intent is to specify `'user'` as the default role, and override it selectively for certain methods, you would probably use the `getAllAndOverride()` method.
 
 ```typescript
 const roles = this.reflector.getAllAndOverride(Roles, [context.getHandler(), context.getClass()]);
 
 ```
 
-使用此代码的守卫，在 `create()` 方法的上下文中运行，具有上述元数据，将导致 `roles` 包含 `['admin']`。
+A guard with this code, running in the context of the `create()` method, with the above metadata, would result in `roles` containing `['admin']`.
 
-要获取两者的元数据并合并它（此方法合并数组和对象），使用 `getAllAndMerge()` 方法：
+To get metadata for both and merge it (this method merges both arrays and objects), use the `getAllAndMerge()` method:
 
 ```typescript
 const roles = this.reflector.getAllAndMerge(Roles, [context.getHandler(), context.getClass()]);
 
 ```
 
-这将导致 `roles` 包含 `['user', 'admin']`。
+This would result in `roles` containing `['user', 'admin']`.
 
-对于这两个合并方法，您传递元数据键作为第一个参数，传递元数据目标上下文数组（即，对 `getHandler()` 和/或 `getClass()` 方法的调用）作为第二个参数。
+For both of these merge methods, you pass the metadata key as the first argument, and an array of metadata target contexts (i.e., calls to the `getHandler()` and/or `getClass()` methods) as the second argument.
 
-#### 低级方法
+#### Low-level approach
 
-如前所述，除了使用 `Reflector#createDecorator`，您还可以使用内置 `@SetMetadata()` 装饰器将元数据附加到处理程序。
+As mentioned earlier, instead of using `Reflector#createDecorator`, you can also use the built-in `@SetMetadata()` decorator to attach metadata to a handler.
 
 ```typescript
 @Post()
@@ -259,24 +256,20 @@ async create(@Body() createCatDto: CreateCatDto) {
 
 ```
 
-::: info 提示 
-从 `@nestjs/common` 包导入。
-:::
+> info **Hint** The `@SetMetadata()` decorator is imported from the `@nestjs/common` package.
 
-通过上面的构造，我们将 `roles` 元数据（`roles` 是元数据键，`['admin']` 是关联的值）附加到 `create()` 方法。虽然这可行，但直接在路由中使用 `@SetMetadata()` 不是好的做法。相反，您可以创建自己的装饰器，如下所示：
+With the construction above, we attached the `roles` metadata (`roles` is a metadata key and `['admin']` is the associated value) to the `create()` method. While this works, it's not good practice to use `@SetMetadata()` directly in your routes. Instead, you can create your own decorators, as shown below:
 
 ```typescript
 import { SetMetadata } from '@nestjs/common';
 
 export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
 
-export const Roles = (...roles) => SetMetadata('roles', roles);
-
 ```
 
-这种方法更清晰、更易读，并且在某种程度上类似于 `Reflector#createDecorator` 方法。区别在于，使用 `@SetMetadata` 您可以更多地控制元数据键和值，还可以创建接受多个参数的装饰器。
+This approach is much cleaner and more readable, and somewhat resembles the `Reflector#createDecorator` approach. The difference is that with `@SetMetadata` you have more control over the metadata key and value, and also can create decorators that take more than one argument.
 
-现在我们有了自定义 `@Roles()` 装饰器，我们可以用它来装饰 `create()` 方法。
+Now that we have a custom `@Roles()` decorator, we can use it to decorate the `create()` method.
 
 ```typescript
 @Post()
@@ -287,7 +280,7 @@ async create(@Body() createCatDto: CreateCatDto) {
 
 ```
 
-要访问路由的角色（自定义元数据），我们将再次使用 `Reflector` 辅助类：
+To access the route's role(s) (custom metadata), we'll use the `Reflector` helper class again:
 
 ```typescript
 @Injectable()
@@ -297,15 +290,13 @@ export class RolesGuard {
 
 ```
 
-::: info 提示 
-从 `@nestjs/core` 包导入。
-:::
+> info **Hint** The `Reflector` class is imported from the `@nestjs/core` package.
 
-现在，要读取处理程序元数据，使用 `get()` 方法。
+Now, to read the handler metadata, use the `get()` method.
 
 ```typescript
 const roles = this.reflector.get<string[]>('roles', context.getHandler());
 
 ```
 
-这里我们传递元数据**键**作为第一个参数（在我们的例子中是 `'roles'`），而不是传递装饰器引用。其他所有内容与 `Reflector#createDecorator` 示例中的相同。
+Here instead of passing a decorator reference, we pass the metadata **key** as the first argument (which in our case is `'roles'`). Everything else remains the same as in the `Reflector#createDecorator` example.
