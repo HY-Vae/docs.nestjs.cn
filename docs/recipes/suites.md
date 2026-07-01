@@ -1,48 +1,50 @@
+<!-- 此文件从 content/recipes/suites.md 自动生成，请勿直接修改此文件 -->
+<!-- 生成时间: 2026-07-01T03:13:52.596Z -->
+<!-- 源文件: content/recipes/suites.md -->
+
 ### Suites
 
-[Suites](https://suites.dev) 是一个用于 TypeScript 依赖注入框架的[开源](https://github.com/suites-dev/suites)单元测试框架。它作为手动创建模拟、使用多个模拟配置进行冗长测试设置或使用非类型化测试替身（如模拟和存根）的**替代方案**。
+[Suites](https://suites.dev) is an [open-source](https://github.com/suites-dev/suites) unit-testing framework for TypeScript dependency injection frameworks. It is used as an **alternative** to manually creating mocks, verbose test setup with multiple mock configurations, or working with untyped test doubles (like mocks and stubs).
 
-Suites 在运行时从 NestJS 服务中读取元数据，并自动为所有依赖项生成完全类型化的模拟对象。
-这消除了样板模拟设置，并确保类型安全的测试。虽然 Suites 可以与 `Test.createTestingModule()` 一起使用，但它擅长于专注的单元测试。
-使用 `Test.createTestingModule()` 来验证模块连接、装饰器、守卫和拦截器。
-使用 Suites 进行具有自动模拟生成的快速单元测试。
+Suites reads metadata from nestjs services at runtime and automatically generates fully-typed mocks for all dependencies.
+This removes boilerplate mock setup and ensures type-safe tests. While Suites can be used alongside `Test.createTestingModule()`, it excels at focused unit testing.
+Use `Test.createTestingModule()` when validating module wiring, decorators, guards, and interceptors.
+Use Suites for fast unit tests with automatic mock generation.
 
-有关基于模块的测试的更多信息，请参阅[单元测试](/fundamentals/unit-testing)章节。
+For more information on module-based testing, see the [testing fundamentals](/fundamentals/testing) chapter.
 
-:::info 注意
-`Suites` 是第三方包，不由 NestJS 核心团队维护。请在[相应的仓库](https://github.com/suites-dev/suites)中报告任何问题。
-:::
+> info **Note** `Suites` is a third-party package and is not maintained by the NestJS core team. Please report any issues to the [appropriate repository](https://github.com/suites-dev/suites).
 
-#### 入门
+#### Getting started
 
-本指南演示如何使用 Suites 测试 NestJS 服务。它涵盖了隔离测试（所有依赖项都被模拟）和社交测试（选定的真实实现）。
+This guide demonstrates using Suites to test NestJS services. It covers both isolated testing (all dependencies mocked) and sociable testing (selected real implementations).
 
-#### 安装 Suites
+#### Install Suites
 
-验证 NestJS 运行时依赖项是否已安装：
+Verify NestJS runtime dependencies are installed:
 
 ```bash
 $ npm install @nestjs/common @nestjs/core reflect-metadata
 
 ```
 
-安装 Suites 核心、NestJS 适配器和测试替身适配器：
+Install Suites core, the NestJS adapter, and the doubles adapter:
 
 ```bash
 $ npm install --save-dev @suites/unit @suites/di.nestjs @suites/doubles.jest
 
 ```
 
-测试替身适配器（`@suites/doubles.jest`）提供了 Jest 模拟功能的封装。它暴露了 `mock()` 和 `stub()` 函数，用于创建类型安全的测试替身。
+The doubles adapter (`@suites/doubles.jest`) provides wrappers around Jest's mocking capabilities. It exposes `mock()` and `stub()` functions that create type-safe test doubles.
 
-确保 Jest 和 TypeScript 可用：
+Ensure Jest and TypeScript are available:
 
 ```bash
 $ npm install --save-dev ts-jest @types/jest jest typescript
 
 ```
 
-<details><summary>如果您使用 Vitest，请展开</summary>
+<details><summary>Expand if you're using Vitest</summary>
 
 ```bash
 $ npm install --save-dev @suites/unit @suites/di.nestjs @suites/doubles.vitest
@@ -51,7 +53,7 @@ $ npm install --save-dev @suites/unit @suites/di.nestjs @suites/doubles.vitest
 
 </details>
 
-<details><summary>如果您使用 Sinon，请展开</summary>
+<details><summary>Expand if you're using Sinon</summary>
 
 ```bash
 $ npm install --save-dev @suites/unit @suites/di.nestjs @suites/doubles.sinon
@@ -60,13 +62,11 @@ $ npm install --save-dev @suites/unit @suites/di.nestjs @suites/doubles.sinon
 
 </details>
 
-:::info 提示
-请确保您的 `tsconfig` 的 `compilerOptions` 中启用了 `"emitDecoratorMetadata": true`（NestJS 标准配置）。
-:::
+> info **Hint** Make sure to have `"emitDecoratorMetadata": true` in your tsconfig `compilerOptions` (NestJS standard).
 
-#### 设置类型定义
+#### Set up type definitions
 
-在项目根目录创建 `global.d.ts`：
+Create `global.d.ts` at your project root:
 
 ```typescript
 /// <reference types="@suites/doubles.jest/unit" />
@@ -74,9 +74,9 @@ $ npm install --save-dev @suites/unit @suites/di.nestjs @suites/doubles.sinon
 
 ```
 
-#### 创建示例服务
+#### Create a sample service
 
-本指南使用一个具有两个依赖项的简单 `UserService`：
+This guide uses a simple `UserService` with two dependencies:
 
 ```typescript
 import { Injectable } from '@nestjs/common';
@@ -84,11 +84,11 @@ import { Injectable } from '@nestjs/common';
 @Injectable()
 export class UserRepository {
   async findById(id: string): Promise<User | null> {
-    // 数据库查询
+    // Database query
   }
 
   async save(user: User): Promise<User> {
-    // 数据库保存
+    // Database save
   }
 }
 
@@ -124,9 +124,9 @@ export class UserService {
 
 ```
 
-#### 编写单元测试
+#### Write a unit test
 
-使用 `TestBed.solitary()` 创建所有依赖项都被模拟的隔离测试：
+Use `TestBed.solitary()` to create isolated tests with all dependencies mocked:
 
 ```typescript
 import { TestBed, type Mocked } from '@suites/unit';
@@ -160,12 +160,12 @@ describe('User Service Unit Spec', () => {
 
 ```
 
-`TestBed.solitary()` 分析构造函数并为所有依赖项创建类型化模拟对象。
-`Mocked<T>` 类型为模拟配置提供 IntelliSense 支持。
+`TestBed.solitary()` analyzes the constructor and creates typed mocks for all dependencies.
+The `Mocked<T>` type provides IntelliSense support for mock configuration.
 
-#### 预编译模拟配置
+#### Pre-compile mock configuration
 
-在编译前使用 `.mock().impl()` 配置模拟行为：
+Configure mock behavior before compilation using `.mock().impl()`:
 
 ```typescript
 import { TestBed } from '@suites/unit';
@@ -198,11 +198,11 @@ describe('User Service Unit Spec - pre-configured', () => {
 
 ```
 
-`stubFn` 参数对应于已安装的测试替身适配器（Jest 使用 `jest.fn()`，Vitest 使用 `vi.fn()`，Sinon 使用 `sinon.stub()`）。
+The `stubFn` parameter corresponds to the installed doubles adapter (`jest.fn()` for Jest, `vi.fn()` for Vitest, `sinon.stub()` for Sinon).
 
-#### 使用真实依赖项进行测试
+#### Testing with real dependencies
 
-使用 `TestBed.sociable()` 和 `.expose()` 为特定依赖项使用真实实现：
+Use `TestBed.sociable()` with `.expose()` to use real implementations for specific dependencies:
 
 ```typescript
 import { TestBed, Mocked } from '@suites/unit';
@@ -229,17 +229,17 @@ describe('UserService - with real logger', () => {
 
     await userService.findById('1');
 
-    // Logger 实际执行，无需模拟
+    // Logger actually executes, no mock needed
   });
 });
 
 ```
 
-`.expose(Logger)` 使用真实实现实例化 `Logger`，同时保持其他依赖项被模拟。
+`.expose(Logger)` instantiates `Logger` with its real implementation while keeping other dependencies mocked.
 
-#### 基于令牌的依赖项
+#### Token-based dependencies
 
-Suites 处理自定义注入令牌（字符串或符号）：
+Suites handles custom injection tokens (strings or symbols):
 
 ```typescript
 import { Injectable, Inject } from '@nestjs/common';
@@ -259,7 +259,7 @@ export class ConfigService {
 
 ```
 
-使用 `unitRef.get()` 访问基于令牌的依赖项：
+Access token-based dependencies with `unitRef.get()`:
 
 ```typescript
 import { TestBed } from '@suites/unit';
@@ -281,9 +281,9 @@ describe('Config Service Unit Spec', () => {
 
 ```
 
-#### 直接使用 mock() 和 stub()
+#### Using mock() and stub() directly
 
-对于那些更喜欢不使用 `TestBed` 而直接控制的人，测试替身适配器包提供了 `mock()` 和 `stub()` 函数：
+For those who prefer direct control without `TestBed`, the doubles adapter package provides `mock()` and `stub()` functions:
 
 ```typescript
 import { mock } from '@suites/unit';
@@ -302,29 +302,27 @@ describe('User Service Unit Spec', () => {
 
 ```
 
-`mock()` 创建一个类型化的模拟对象，`stub()` 封装底层模拟库（本例中为 Jest）以提供 `mockResolvedValue()` 等方法。
-这些函数来自已安装的测试替身适配器（`@suites/doubles.jest`），它适配测试框架的原生模拟功能。
+`mock()` creates a typed mock object, and `stub()` wraps the underlying mocking library (Jest in this example) to provide methods like `mockResolvedValue()`
+These functions come from the installed doubles adapter (`@suites/doubles.jest`), which adapts the native mocking capabilities of the test framework.
 
-:::info 提示
-`mock()` 函数是 `@golevelup/ts-jest` 中 `createMock` 的替代方案。两者都创建类型化的模拟对象。有关 `createMock` 的更多信息，请参阅[单元测试](/fundamentals/unit-testing#auto-mocking)章节。
-:::
+> info **Hint** The `mock()` function is an alternative to `createMock` from `@golevelup/ts-jest`. Both create typed mock objects. See the [testing fundamentals](/fundamentals/testing#auto-mocking) chapter for more on `createMock`.
 
-#### 总结
+#### Summary
 
-**使用 `Test.createTestingModule()` 用于：**
-- 验证模块配置和提供者连接
-- 测试装饰器、守卫、拦截器和管道
-- 验证跨模块的依赖注入
-- 使用中间件测试完整的应用程序上下文
+**Use `Test.createTestingModule()` for:**
+- Validating module configuration and provider wiring
+- Testing decorators, guards, interceptors, and pipes
+- Verifying dependency injection across modules
+- Testing full application context with middleware
 
-**使用 Suites 用于：**
-- 专注于业务逻辑的快速单元测试
-- 为多个依赖项自动生成模拟
-- 具有 IntelliSense 的类型安全测试替身
+**Use Suites for:**
+- Fast unit tests focused on business logic
+- Automatic mock generation for multiple dependencies
+- Type-safe test doubles with IntelliSense
 
-按目的组织测试：使用 Suites 进行验证单个服务行为的单元测试，使用 `Test.createTestingModule()` 进行验证模块配置的集成测试。
+Organize tests by purpose: use Suites for unit tests verifying individual service behavior, and use `Test.createTestingModule()` for integration tests verifying module configuration.
 
-更多信息：
-- [Suites 文档](https://suites.dev/docs)
-- [Suites GitHub 仓库](https://github.com/suites-dev/suites)
-- [NestJS 测试文档](/fundamentals/unit-testing)
+For more information:
+- [Suites Documentation](https://suites.dev/docs)
+- [Suites GitHub Repository](https://github.com/suites-dev/suites)
+- [NestJS Testing Documentation](/fundamentals/testing)
