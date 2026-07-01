@@ -1,12 +1,16 @@
-### HTTP 适配器
+<!-- 此文件从 content/faq/http-adapter.md 自动生成，请勿直接修改此文件 -->
+<!-- 生成时间: 2026-07-01T03:13:52.604Z -->
+<!-- 源文件: content/faq/http-adapter.md -->
 
-有时，您可能需要访问底层的 HTTP 服务器，无论是在 Nest 应用程序上下文内部还是外部。
+### HTTP adapter
 
-每个原生（平台特定的）HTTP 服务器/库（例如 Express 和 Fastify）实例都被包装在一个 **适配器** 中。适配器被注册为一个全局可用的提供者，可以从应用程序上下文中获取，也可以注入到其他提供者中。
+Occasionally, you may want to access the underlying HTTP server, either within the Nest application context or from the outside.
 
-#### 应用程序上下文外部策略
+Every native (platform-specific) HTTP server/library (e.g., Express and Fastify) instance is wrapped in an **adapter**. The adapter is registered as a globally available provider that can be retrieved from the application context, as well as injected into other providers.
 
-要从应用程序上下文外部获取 `HttpAdapter` 的引用，请调用 `getHttpAdapter()` 方法。
+#### Outside application context strategy
+
+To get a reference to the `HttpAdapter` from outside of the application context, call the `getHttpAdapter()` method.
 
 ```typescript
 const app = await NestFactory.create(AppModule);
@@ -14,9 +18,9 @@ const httpAdapter = app.getHttpAdapter();
 
 ```
 
-#### 作为可注入对象
+#### As injectable
 
-要从应用程序上下文内部获取 `HttpAdapterHost` 的引用，请使用与其他现有提供者相同的注入技术（例如使用构造函数注入）。
+To get a reference to the `HttpAdapterHost` from within the application context, inject it using the same technique as any other existing provider (e.g., using constructor injection).
 
 ```typescript
 export class CatsService {
@@ -25,11 +29,9 @@ export class CatsService {
 
 ```
 
-:::info 提示
-`HttpAdapterHost` 从 `@nestjs/core` 包中导入。
-:::
+> info **Hint** The `HttpAdapterHost` is imported from the `@nestjs/core` package.
 
-`HttpAdapterHost` **不是** 实际的 `HttpAdapter`。要获取实际的 `HttpAdapter` 实例，只需访问 `httpAdapter` 属性。
+The `HttpAdapterHost` is **not** an actual `HttpAdapter`. To get the actual `HttpAdapter` instance, simply access the `httpAdapter` property.
 
 ```typescript
 const adapterHost = app.get(HttpAdapterHost);
@@ -37,31 +39,31 @@ const httpAdapter = adapterHost.httpAdapter;
 
 ```
 
-`httpAdapter` 是底层框架使用的 HTTP 适配器的实际实例。它是 `ExpressAdapter` 或 `FastifyAdapter` 的实例（两个类都继承自 `AbstractHttpAdapter`）。
+The `httpAdapter` is the actual instance of the HTTP adapter used by the underlying framework. It is an instance of either `ExpressAdapter` or `FastifyAdapter` (both classes extend `AbstractHttpAdapter`).
 
-适配器对象暴露了多个有用的方法来与 HTTP 服务器交互。但是，如果您想直接访问库实例（例如 Express 实例），请调用 `getInstance()` 方法。
+The adapter object exposes several useful methods to interact with the HTTP server. However, if you want to access the library instance (e.g., the Express instance) directly, call the `getInstance()` method.
 
 ```typescript
 const instance = httpAdapter.getInstance();
 
 ```
 
-#### 监听事件
+#### Listening event
 
-要在服务器开始监听传入请求时执行操作，您可以订阅 `listen$` 流，如下所示：
+To execute an action when the server begins listening for incoming requests, you can subscribe to the `listen$` stream, as demonstrated below:
 
 ```typescript
 this.httpAdapterHost.listen$.subscribe(() =>
-  console.log('HTTP 服务器正在监听'),
+  console.log('HTTP server is listening'),
 );
 
 ```
 
-此外，`HttpAdapterHost` 提供了一个 `listening` 布尔属性，指示服务器当前是否处于活动状态和监听状态：
+Additionally, the `HttpAdapterHost` provides a `listening` boolean property that indicates whether the server is currently active and listening:
 
 ```typescript
 if (this.httpAdapterHost.listening) {
-  console.log('HTTP 服务器正在监听');
+  console.log('HTTP server is listening');
 }
 
 ```

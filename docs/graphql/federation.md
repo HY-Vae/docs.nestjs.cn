@@ -1,32 +1,34 @@
+<!-- 此文件从 content/graphql/federation.md 自动生成，请勿直接修改此文件 -->
+<!-- 生成时间: 2026-07-01T03:13:52.579Z -->
+<!-- 源文件: content/graphql/federation.md -->
+
 ### Federation
 
-Federation 提供了一种将您的单体 GraphQL 服务器拆分成独立微服务的方法。它由两个组件组成：一个网关和一个或多个联邦微服务。每个微服务持有部分 schema，而网关将这些 schema 组合成一个可以被客户端消费的单个 schema。
+Federation offers a means of splitting your monolithic GraphQL server into independent microservices. It consists of two components: a gateway and one or more federated microservices. Each microservice holds part of the schema and the gateway merges the schemas into a single schema that can be consumed by the client.
 
-根据 [Apollo 文档](https://blog.apollographql.com/apollo-federation-f260cf525d21)，Federation 的设计原则是：
+To quote the [Apollo docs](https://blog.apollographql.com/apollo-federation-f260cf525d21), Federation is designed with these core principles:
 
-- 构建图形应该是 **声明式** 的。通过 Federation，您可以从 schema 中声明构建图形，而不是编写命令式的 schema Stitching 代码。
-- 代码应该根据 **关注点** 分离，而不是根据类型。通常，单个团队不控制重要类型的每个方面，因此这些类型的定义应该分布在多个团队和代码库中，而不是集中在一个地方。
-- 图形应该是简单的，可以供客户端消费。联邦服务可以形成一个完整的、产品-关注的图形，该图形准确反映了客户端的消费方式。
-- 这只是一种 **GraphQL**，使用了语言规范的特性。任何语言，不只是 JavaScript，可以实现 Federation。
+- Building a graph should be **declarative.** With federation, you compose a graph declaratively from within your schema instead of writing imperative schema stitching code.
+- Code should be separated by **concern**, not by types. Often no single team controls every aspect of an important type like a User or Product, so the definition of these types should be distributed across teams and codebases, rather than centralized.
+- The graph should be simple for clients to consume. Together, federated services can form a complete, product-focused graph that accurately reflects how it’s being consumed on the client.
+- It’s just **GraphQL**, using only spec-compliant features of the language. Any language, not just JavaScript, can implement federation.
 
-:::warning 警告
-Federation 目前不支持订阅。
-:::
+> warning **Warning** Federation currently does not support subscriptions.
 
-在以下部分，我们将设置一个演示应用程序，包含一个网关和两个联邦端点：Users 服务和 Posts 服务。
+In the following sections, we'll set up a demo application that consists of a gateway and two federated endpoints: Users service and Posts service.
 
-#### 使用 Apollo 实现 Federation
+#### Federation with Apollo
 
-首先，安装所需的依赖项：
+Start by installing the required dependencies:
 
 ```bash
 $ npm install --save @apollo/subgraph
 
 ```
 
-#### Schema First 模式
+#### Schema first
 
-"Users 服务" 提供了一个简单的 schema。注意 `@key` 指令：它告诉 Apollo 查询计划器，如果指定了 `id`，可以获取特定的 `User` 实例。此外，我们 `extend` 了 `Query` 类型。
+The "User service" provides a simple schema. Note the `@key` directive: it instructs the Apollo query planner that a particular instance of `User` can be fetched if you specify its `id`. Also, note that we `extend` the `Query` type.
 
 ```graphql
 type User @key(fields: "id") {
@@ -40,7 +42,7 @@ extend type Query {
 
 ```
 
-Resolver 提供了一个额外的方法名为 `resolveReference()`。这个方法在 Apollo 网关执行时被触发，我们将在 Posts 服务中看到这个示例。请注意，这个方法必须被 `@ResolveReference()` 装饰器标注。
+Resolver provides one additional method named `resolveReference()`. This method is triggered by the Apollo Gateway whenever a related resource requires a User instance. We'll see an example of this in the Posts service later. Please note that the method must be annotated with the `@ResolveReference()` decorator.
 
 ```typescript
 import { Args, Query, Resolver, ResolveReference } from '@nestjs/graphql';
@@ -63,7 +65,7 @@ export class UsersResolver {
 
 ```
 
-最后，我们将所有组件连接起来，通过在配置对象中注册 `GraphQLModule`，并将 `ApolloFederationDriver` 驱动器作为参数传递：
+Finally, we hook everything up by registering the `GraphQLModule` passing the `ApolloFederationDriver` driver in the configuration object:
 
 ```typescript
 import {
@@ -87,9 +89,9 @@ export class AppModule {}
 
 ```
 
-#### Code First 模式
+#### Code first
 
-首先，让我们为 `User` 实体添加一些额外的装饰器。
+Start by adding some extra decorators to the `User` entity.
 
 ```ts
 import { Directive, Field, ID, ObjectType } from '@nestjs/graphql';
@@ -106,7 +108,7 @@ export class User {
 
 ```
 
-Resolver 提供了一个额外的方法名为 `resolveReference()`。这个方法在 Apollo 网关执行时被触发，我们将在 Posts 服务中看到这个示例。请注意，这个方法必须被 `@ResolveReference()` 装饰器标注。
+Resolver provides one additional method named `resolveReference()`. This method is triggered by the Apollo Gateway whenever a related resource requires a User instance. We'll see an example of this in the Posts service later. Please note that the method must be annotated with the `@ResolveReference()` decorator.
 
 ```ts
 import { Args, Query, Resolver, ResolveReference } from '@nestjs/graphql';
@@ -130,7 +132,7 @@ export class UsersResolver {
 
 ```
 
-最后，我们将所有组件连接起来，通过在配置对象中注册 `GraphQLModule`，并将 `ApolloFederationDriver` 驱动器作为参数传递：
+Finally, we hook everything up by registering the `GraphQLModule` passing the `ApolloFederationDriver` driver in the configuration object:
 
 ```typescript
 import {
@@ -154,15 +156,15 @@ export class AppModule {}
 
 ```
 
-工作示例可在 [这里](https://github.com/nestjs/nest/tree/master/sample/31-graphql-federation-code-first/users-application) 找到（Code First 模式），或在 [这里](https://github.com/nestjs/nest/tree/master/sample/32-graphql-federation-schema-first/users-application) 找到（Schema First 模式）。
+A working example is available [here](https://github.com/nestjs/nest/tree/master/sample/31-graphql-federation-code-first/users-application) in code first mode and [here](https://github.com/nestjs/nest/tree/master/sample/32-graphql-federation-schema-first/users-application) in schema first mode.
 
-#### 联邦示例：Posts 服务
+#### Federated example: Posts
 
-Posts 服务应该通过 `getPosts` 查询提供聚合的 posts，同时扩展我们的 `User` 类型，以添加 `user.posts` 字段。
+Post service is supposed to serve aggregated posts through the `getPosts` query, but also extend our `User` type with the `user.posts` field.
 
-#### Schema First 模式
+#### Schema first
 
-"Posts 服务" 在其 schema 中引用了 `User` 类型，使用 `extend` 关键字标记。此外，它还声明了 `User` 类型的一个额外属性（`posts`）。注意 `@key` 指令用于匹配 User 实例，和 `@external` 指令指示 `id` 字段在其他地方管理。
+"Posts service" references the `User` type in its schema by marking it with the `extend` keyword. It also declares one additional property on the `User` type (`posts`). Note the `@key` directive used for matching instances of User, and the `@external` directive indicating that the `id` field is managed elsewhere.
 
 ```graphql
 type Post @key(fields: "id") {
@@ -183,7 +185,7 @@ extend type Query {
 
 ```
 
-在以下示例中，`PostsResolver` 提供了 `getUser()` 方法，该方法返回包含 `__typename` 和一些应用程序可能需要来解析引用的额外属性，在这里是 `id`。`__typename` 由 GraphQL 网关使用，以确定负责 User 类型的微服务，并在执行 `resolveReference()` 方法时请求对应的实例。 "Users 服务" 在上一部分中描述。
+In the following example, the `PostsResolver` provides the `getUser()` method that returns a reference containing `__typename` and some additional properties your application may need to resolve the reference, in this case `id`. `__typename` is used by the GraphQL Gateway to pinpoint the microservice responsible for the User type and retrieve the corresponding instance. The "Users service" described above will be requested upon execution of the `resolveReference()` method.
 
 ```typescript
 import { Query, Resolver, Parent, ResolveField } from '@nestjs/graphql';
@@ -207,7 +209,7 @@ export class PostsResolver {
 
 ```
 
-最后，我们必须注册 `GraphQLModule`，与在 "Users 服务" 部分中一样。
+Lastly, we must register the `GraphQLModule`, similarly to what we did in the "Users service" section.
 
 ```typescript
 import {
@@ -225,15 +227,15 @@ import { PostsResolver } from './posts.resolver';
       typePaths: ['**/*.graphql'],
     }),
   ],
-  providers: [PostsResolvers],
+  providers: [PostsResolver],
 })
 export class AppModule {}
 
 ```
 
-#### Code First 模式
+#### Code first
 
-首先，我们将声明一个表示 `User` 实体的类。虽然实体本身生活在另一个服务中，但我们将在这里使用它（扩展其定义）。注意 `@extends` 和 `@external` 指令。
+First, we will have to declare a class representing the `User` entity. Although the entity itself lives in another service, we will be using it (extending its definition) here. Note the `@extends` and `@external` directives.
 
 ```ts
 import { Directive, ObjectType, Field, ID } from '@nestjs/graphql';
@@ -253,7 +255,7 @@ export class User {
 
 ```
 
-现在，让我们为 `User` 实体的扩展创建相应的 resolver：
+Now let's create the corresponding resolver for our extension on the `User` entity, as follows:
 
 ```ts
 import { Parent, ResolveField, Resolver } from '@nestjs/graphql';
@@ -273,7 +275,7 @@ export class UsersResolver {
 
 ```
 
-我们还需要定义 `Post` 实体类：
+We also have to define the `Post` entity class:
 
 ```ts
 import { Directive, Field, ID, Int, ObjectType } from '@nestjs/graphql';
@@ -297,7 +299,7 @@ export class Post {
 
 ```
 
-及其 resolver：
+And its resolver:
 
 ```ts
 import { Query, Args, ResolveField, Resolver, Parent } from '@nestjs/graphql';
@@ -327,7 +329,7 @@ export class PostsResolver {
 
 ```
 
-最后，让我们将所有组件连接起来，在模块中。请注意架构构建选项，我们指定了 `User` 是一个孤立的（外部）类型。
+And finally, tie it together in a module. Note the schema build options, where we specify that `User` is an orphaned (external) type.
 
 ```ts
 import {
@@ -336,8 +338,8 @@ import {
 } from '@nestjs/apollo';
 import { Module } from '@nestjs/common';
 import { User } from './user.entity';
-import { PostsResolvers } from './posts.resolvers';
-import { UsersResolvers } from './users.resolvers';
+import { PostsResolver } from './posts.resolvers';
+import { UsersResolver } from './users.resolvers';
 import { PostsService } from './posts.service'; // Not included in example
 
 @Module({
@@ -356,18 +358,18 @@ export class AppModule {}
 
 ```
 
-可用的工作示例在 [这里](https://github.com/nestjs/nest/tree/master/sample/31-graphql-federation-code-first/posts-application) 和 [这里](https://github.com/nestjs/nest/tree/master/sample/32-graphql-federation-schema-first/posts-application) 中。
+A working example is available [here](https://github.com/nestjs/nest/tree/master/sample/31-graphql-federation-code-first/posts-application) for the code first mode and [here](https://github.com/nestjs/nest/tree/master/sample/32-graphql-federation-schema-first/posts-application) for the schema first mode.
 
-#### 联邦示例：Gateway
+#### Federated example: Gateway
 
-首先安装所需的依赖项：
+Start by installing the required dependency:
 
 ```bash
 $ npm install --save @apollo/gateway
 
 ```
 
-Gateway 需要指定的端点列表，并且将自动发现相应的架构。因此，Gateway 服务的实现将保持 code 和 schema 两种模式相同。
+The gateway requires a list of endpoints to be specified and it will auto-discover the corresponding schemas. Therefore the implementation of the gateway service will remain the same for both code and schema first approaches.
 
 ```typescript
 import { IntrospectAndCompose } from '@apollo/gateway';
@@ -398,24 +400,22 @@ export class AppModule {}
 
 ```
 
-可用的工作示例在 [这里](https://github.com/nestjs/nest/tree/master/sample/31-graphql-federation-code-first/gateway) 和 [这里](https://github.com/nestjs/nest/tree/master/sample/32-graphql-federation-schema-first/gateway) 中。
+A working example is available [here](https://github.com/nestjs/nest/tree/master/sample/31-graphql-federation-code-first/gateway) for the code first mode and [here](https://github.com/nestjs/nest/tree/master/sample/32-graphql-federation-schema-first/gateway) for the schema first mode.
 
-#### 使用 Mercurius 实现 Federation
+#### Federation with Mercurius
 
-首先安装所需的依赖项：
+Start by installing the required dependencies:
 
 ```bash
 $ npm install --save @apollo/subgraph @nestjs/mercurius
 
 ```
 
-::: info 注意
-需要 `@apollo/subgraph` 包来构建子图架构 (`buildSubgraphSchema`、`printSubgraphSchema` 函数)。
-:::
+> info **Note** The `@apollo/subgraph` package is required to build a subgraph schema (`buildSubgraphSchema`, `printSubgraphSchema` functions).
 
-#### Schema First 模式
+#### Schema first
 
-"用户服务" 提供了一个简单的架构。注意 `@key` 指令：它告诉 Mercurius 查询计划器，如果您指定了 `id`，可以获取 `User` 的实例。另外，我们 `extend` 了 `Query` 类型。
+The "User service" provides a simple schema. Note the `@key` directive: it instructs the Mercurius query planner that a particular instance of `User` can be fetched if you specify its `id`. Also, note that we `extend` the `Query` type.
 
 ```graphql
 type User @key(fields: "id") {
@@ -429,7 +429,7 @@ extend type Query {
 
 ```
 
-Resolver 提供了一个额外的方法名为 `resolveReference()`。这个方法在 Mercurius Gateway 执行时被触发，我们将在 Posts 服务中看到这个例子。请注意，这个方法必须被 `@ResolveReference()` 装饰器标注。
+Resolver provides one additional method named `resolveReference()`. This method is triggered by the Mercurius Gateway whenever a related resource requires a User instance. We'll see an example of this in the Posts service later. Please note that the method must be annotated with the `@ResolveReference()` decorator.
 
 ```typescript
 import { Args, Query, Resolver, ResolveReference } from '@nestjs/graphql';
@@ -452,7 +452,7 @@ export class UsersResolver {
 
 ```
 
-最后，我们将所有内容连接起来，通过在配置对象中注册 `GraphQLModule`，并将 `MercuriusFederationDriver` 驱动器传递给它：
+Finally, we hook everything up by registering the `GraphQLModule` passing the `MercuriusFederationDriver` driver in the configuration object:
 
 ```typescript
 import {
@@ -477,9 +477,9 @@ export class AppModule {}
 
 ```
 
-#### Code First 模式
+#### Code first
 
-首先，让我们为 `User` 实体添加一些额外的装饰器。
+Start by adding some extra decorators to the `User` entity.
 
 ```ts
 import { Directive, Field, ID, ObjectType } from '@nestjs/graphql';
@@ -496,7 +496,7 @@ export class User {
 
 ```
 
-Resolver 提供了一个额外的方法名为 `resolveReference()`。这个方法在 Mercurius Gateway 执行时被触发，我们将在 Posts 服务中看到这个例子。请注意，这个方法必须被 `@ResolveReference()` 装饰器标注。
+Resolver provides one additional method named `resolveReference()`. This method is triggered by the Mercurius Gateway whenever a related resource requires a User instance. We'll see an example of this in the Posts service later. Please note that the method must be annotated with the `@ResolveReference()` decorator.
 
 ```ts
 import { Args, Query, Resolver, ResolveReference } from '@nestjs/graphql';
@@ -520,7 +520,7 @@ export class UsersResolver {
 
 ```
 
-最后，我们将所有内容连接起来，通过在配置对象中注册 `GraphQLModule`，并将 `MercuriusFederationDriver` 驱动器传递给它：
+Finally, we hook everything up by registering the `GraphQLModule` passing the `MercuriusFederationDriver` driver in the configuration object:
 
 ```typescript
 import {
@@ -545,13 +545,13 @@ export class AppModule {}
 
 ```
 
-#### 联邦示例：Posts 服务
+#### Federated example: Posts
 
-Posts 服务应该通过 `getPosts` 查询提供聚合的 posts，同时扩展我们的 `User` 类型，以添加 `user.posts` 字段。
+Post service is supposed to serve aggregated posts through the `getPosts` query, but also extend our `User` type with the `user.posts` field.
 
-#### Schema First 模式
+#### Schema first
 
-"Posts 服务" 在其 schema 中引用了 `User` 类型，使用 `extend` 关键字标记。此外，它还声明了 `User` 类型的一个额外属性（`posts`）。注意 `@key` 指令用于匹配 User 实例，和 `@external` 指令指示 `id` 字段在其他地方管理。
+"Posts service" references the `User` type in its schema by marking it with the `extend` keyword. It also declares one additional property on the `User` type (`posts`). Note the `@key` directive used for matching instances of User, and the `@external` directive indicating that the `id` field is managed elsewhere.
 
 ```graphql
 type Post @key(fields: "id") {
@@ -572,7 +572,7 @@ extend type Query {
 
 ```
 
-在以下示例中，`PostsResolver` 提供了 `getUser()` 方法，该方法返回包含 `__typename` 和一些应用程序可能需要来解析引用的额外属性，在这里是 `id`。`__typename` 由 GraphQL 网关使用，以确定负责 User 类型的微服务，并在执行 `resolveReference()` 方法时请求对应的实例。 "Users 服务" 在上一部分中描述。
+In the following example, the `PostsResolver` provides the `getUser()` method that returns a reference containing `__typename` and some additional properties your application may need to resolve the reference, in this case `id`. `__typename` is used by the GraphQL Gateway to pinpoint the microservice responsible for the User type and retrieve the corresponding instance. The "Users service" described above will be requested upon execution of the `resolveReference()` method.
 
 ```typescript
 import { Query, Resolver, Parent, ResolveField } from '@nestjs/graphql';
@@ -596,7 +596,7 @@ export class PostsResolver {
 
 ```
 
-最后，我们必须注册 `GraphQLModule`，与在 "Users 服务" 部分中一样。
+Lastly, we must register the `GraphQLModule`, similarly to what we did in the "Users service" section.
 
 ```typescript
 import {
@@ -615,15 +615,15 @@ import { PostsResolver } from './posts.resolver';
       typePaths: ['**/*.graphql'],
     }),
   ],
-  providers: [PostsResolvers],
+  providers: [PostsResolver],
 })
 export class AppModule {}
 
 ```
 
-#### Code First 模式
+#### Code first
 
-首先，我们将声明一个表示 `User` 实体的类。虽然实体本身生活在另一个服务中，但我们将在这里使用它（扩展其定义）。注意 `@extends` 和 `@external` 指令。
+First, we will have to declare a class representing the `User` entity. Although the entity itself lives in another service, we will be using it (extending its definition) here. Note the `@extends` and `@external` directives.
 
 ```ts
 import { Directive, ObjectType, Field, ID } from '@nestjs/graphql';
@@ -643,7 +643,7 @@ export class User {
 
 ```
 
-现在，让我们为 `User` 实体的扩展创建相应的 resolver：
+Now let's create the corresponding resolver for our extension on the `User` entity, as follows:
 
 ```ts
 import { Parent, ResolveField, Resolver } from '@nestjs/graphql';
@@ -663,7 +663,7 @@ export class UsersResolver {
 
 ```
 
-我们还需要定义 `Post` 实体类：
+We also have to define the `Post` entity class:
 
 ```ts
 import { Directive, Field, ID, Int, ObjectType } from '@nestjs/graphql';
@@ -687,7 +687,7 @@ export class Post {
 
 ```
 
-及其 resolver：
+And its resolver:
 
 ```ts
 import { Query, Args, ResolveField, Resolver, Parent } from '@nestjs/graphql';
@@ -717,7 +717,7 @@ export class PostsResolver {
 
 ```
 
-最后，让我们将所有组件连接起来，在模块中。请注意架构构建选项，我们指定了 `User` 是一个孤立的（外部）类型。
+And finally, tie it together in a module. Note the schema build options, where we specify that `User` is an orphaned (external) type.
 
 ```ts
 import {
@@ -726,8 +726,8 @@ import {
 } from '@nestjs/mercurius';
 import { Module } from '@nestjs/common';
 import { User } from './user.entity';
-import { PostsResolvers } from './posts.resolvers';
-import { UsersResolvers } from './users.resolvers';
+import { PostsResolver } from './posts.resolvers';
+import { UsersResolver } from './users.resolvers';
 import { PostsService } from './posts.service'; // Not included in example
 
 @Module({
@@ -747,9 +747,9 @@ export class AppModule {}
 
 ```
 
-#### 联邦示例：Gateway
+#### Federated example: Gateway
 
-Gateway 需要指定的端点列表，并且将自动发现相应的架构。因此，Gateway 服务的实现将保持 code 和 schema 两种模式相同。
+The gateway requires a list of endpoints to be specified and it will auto-discover the corresponding schemas. Therefore the implementation of the gateway service will remain the same for both code and schema first approaches.
 
 ```typescript
 import {
@@ -778,23 +778,19 @@ export class AppModule {}
 
 ### Federation 2
 
-根据 [Apollo 文档](https://www.apollographql.com/docs/federation/federation-2/new-in-federation-2)，Federation 2 改进了原始 Apollo Federation（本文档中称为 Federation 1）的开发体验，它与大多数原始 supergraph 向后兼容。
+To quote the [Apollo docs](https://www.apollographql.com/docs/federation/federation-2/new-in-federation-2), Federation 2 improves developer experience from the original Apollo Federation (called Federation 1 in this doc), which is backward compatible with most original supergraphs.
 
-:::warning 警告
-Mercurius 不完全支持 Federation 2。
+> warning **Warning** Mercurius doesn't fully support Federation 2. You can see the list of libraries that support Federation 2 [here](https://www.apollographql.com/docs/federation/supported-subgraphs#javascript--typescript).
 
-您可以在 [这里](https://www.apollographql.com/docs/federation/supported-subgraphs#javascript--typescript) 查看支持 Federation 2 的库列表。
-:::
+In the following sections, we'll upgrade the previous example to Federation 2.
 
-在以下部分中，我们将升级之前的示例到 Federation 2。
+#### Federated example: Users
 
-#### 联邦示例：Users 服务
+One change in Federation 2 is that entities have no originating subgraph, so we don't need to extend `Query` anymore. For more detail please refer to [the entities topic](https://www.apollographql.com/docs/federation/federation-2/new-in-federation-2#entities) in Apollo Federation 2 docs.
 
-Federation 2 中的一个变化是，实体没有原始子图，因此我们不再需要扩展 `Query`。更多详细信息请参考 [Apollo Federation 2 文档](https://www.apollographql.com/docs/federation/federation-2/new-in-federation-2#entities) 中的实体主题。
+#### Schema first
 
-#### Schema First 模式
-
-我们可以简单地从 schema 中删除 `extend` 关键字。
+We can simply remove `extend` keyword from the schema.
 
 ```graphql
 type User @key(fields: "id") {
@@ -808,9 +804,9 @@ type Query {
 
 ```
 
-#### Code First 模式
+#### Code first
 
-要使用 Federation 2，我们需要在 `autoSchemaFile` 选项中指定联邦版本。
+To use Federation 2, we need to specify the federation version in `autoSchemaFile` option.
 
 ```ts
 import {
@@ -836,13 +832,13 @@ export class AppModule {}
 
 ```
 
-#### 联邦示例：Posts 服务
+#### Federated example: Posts
 
-与上面的原因相同，我们不再需要扩展 `User` 和 `Query`。
+With the same reason as above, we don't need to extend `User` and `Query` anymore.
 
-#### Schema First 模式
+#### Schema first
 
-我们可以简单地从 schema 中删除 `extend` 和 `external` 指令。
+We can simply remove `extend` and `external` directives from the schema
 
 ```graphql
 type Post @key(fields: "id") {
@@ -863,9 +859,9 @@ type Query {
 
 ```
 
-#### Code First 模式
+#### Code first
 
-因为我们不再扩展 `User` 实体，我们可以简单地从 `User` 中删除 `extends` 和 `external` 指令。
+Since we don't extend `User` entity anymore, we can simply remove `extends` and `external` directives from `User`.
 
 ```ts
 import { Directive, ObjectType, Field, ID } from '@nestjs/graphql';
@@ -883,7 +879,7 @@ export class User {
 
 ```
 
-此外，与 User 服务相同，我们需要在 `GraphQLModule` 中指定使用 Federation 2。
+Also, similarly to the User service, we need to specify in the `GraphQLModule` to use Federation 2.
 
 ```ts
 import {
@@ -892,8 +888,8 @@ import {
 } from '@nestjs/apollo';
 import { Module } from '@nestjs/common';
 import { User } from './user.entity';
-import { PostsResolvers } from './posts.resolvers';
-import { UsersResolvers } from './users.resolvers';
+import { PostsResolver } from './posts.resolvers';
+import { UsersResolver } from './users.resolvers';
 import { PostsService } from './posts.service'; // Not included in example
 
 @Module({
