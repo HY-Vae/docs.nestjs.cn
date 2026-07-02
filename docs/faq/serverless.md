@@ -1,25 +1,28 @@
+<!-- 此文件从 content/faq/serverless.md 自动生成，请勿直接修改此文件 -->
+<!-- 生成时间: 2026-07-02T03:10:47.985Z -->
+<!-- 源文件: content/faq/serverless.md -->
+
 ### Serverless
 
-Serverless 计算是一种云计算执行模型，云提供商按需分配机器资源，代表客户管理服务器。当应用程序不使用时，没有分配给应用程序的计算资源。定价基于应用程序消耗的实际资源量（[来源](https://en.wikipedia.org/wiki/Serverless_computing)）。
+Serverless computing is a cloud computing execution model in which the cloud provider allocates machine resources on-demand, taking care of the servers on behalf of their customers. When an app is not in use, there are no computing resources allocated to the app. Pricing is based on the actual amount of resources consumed by an application ([source](https://en.wikipedia.org/wiki/Serverless_computing)).
 
-使用 **serverless 架构**，您可以纯粹专注于应用程序代码中的各个函数。AWS Lambda、Google Cloud Functions 和 Microsoft Azure Functions 等服务负责所有物理硬件、虚拟机操作系统和 Web 服务器软件管理。
+With a **serverless architecture**, you focus purely on the individual functions in your application code. Services such as AWS Lambda, Google Cloud Functions, and Microsoft Azure Functions take care of all the physical hardware, virtual machine operating system, and web server software management.
 
-:::info 提示
-本章不涵盖 serverless 函数的优缺点，也不深入探讨任何云提供商的具体细节。
-:::
+> info **Hint** This chapter does not cover the pros and cons of serverless functions nor dives into the specifics of any cloud providers.
 
-#### 冷启动
+#### Cold start
 
-冷启动是很长一段时间以来您的代码第一次执行。根据您使用的云提供商，它可能跨越多个不同的操作，从下载代码和引导运行时到最终运行您的代码。
-此过程增加了**显著的延迟**，具体取决于多个因素，如语言、应用程序所需的包数量等。
+A cold start is the first time your code has been executed in a while. Depending on a cloud provider you use, it may span several different operations, from downloading the code and bootstrapping the runtime to eventually running your code.
+This process adds **significant latency** depending on several factors, the language, the number of packages your application require, etc.
 
-冷启动很重要，虽然有些事情超出了我们的控制范围，但在我们这边仍然可以做很多事情来使其尽可能短。
+The cold start is important and although there are things which are beyond our control, there's still a lot of things we can do on our side to make it as short as possible.
 
-虽然您可以将 Nest 视为专为复杂企业应用程序设计的完整框架，但它也**适用于更"简单"的应用程序**（或脚本）。例如，通过使用[独立应用程序](/standalone-applications)功能，您可以在简单的工作程序、CRON 作业、CLI 或 serverless 函数中利用 Nest 的 DI 系统。
+While you can think of Nest as a fully-fledged framework designed to be used in complex, enterprise applications,
+it is also **suitable for much "simpler" applications** (or scripts). For example, with the use of [Standalone applications](/standalone-applications) feature, you can take advantage of Nest's DI system in simple workers, CRON jobs, CLIs, or serverless functions.
 
-#### 基准测试
+#### Benchmarks
 
-为了更好地了解在 serverless 函数上下文中使用 Nest 或其他知名库（如 `express`）的成本，让我们比较 Node 运行时运行以下脚本需要多长时间：
+To better understand what's the cost of using Nest or other, well-known libraries (like `express`) in the context of serverless functions, let's compare how much time Node runtime needs to run the following scripts:
 
 ```typescript
 // #1 Express
@@ -63,7 +66,7 @@ bootstrap();
 
 ```
 
-对于所有这些脚本，我们使用了 `tsc` (TypeScript) 编译器，因此代码保持未打包状态（未使用 `webpack`）。
+For all these scripts, we used the `tsc` (TypeScript) compiler and so the code remains unbundled (`webpack` isn't used).
 
 |                                      |                   |
 | ------------------------------------ | ----------------- |
@@ -72,12 +75,10 @@ bootstrap();
 | Nest (standalone application)        | 0.1117s (111.7ms) |
 | Raw Node.js script                   | 0.0071s (7.1ms)   |
 
-:::info 注意
-机器：MacBook Pro Mid 2014, 2.5 GHz Quad-Core Intel Core i7, 16 GB 1600 MHz DDR3, SSD。
-:::
+> info **Note** Machine: MacBook Pro Mid 2014, 2.5 GHz Quad-Core Intel Core i7, 16 GB 1600 MHz DDR3, SSD.
 
-现在，让我们重复所有基准测试，但这次使用 `webpack`（如果您安装了 [Nest CLI](/cli/overview)，可以运行 `nest build --webpack`）将我们的应用程序打包成单个可执行 JavaScript 文件。
-但是，我们不使用 Nest CLI 附带的默认 `webpack` 配置，而是确保将所有依赖项（`node_modules`）打包在一起，如下所示：
+Now, let's repeat all benchmarks but this time, using `webpack` (if you have [Nest CLI](/cli/overview) installed, you can run `nest build --webpack`) to bundle our application into a single executable JavaScript file.
+However, instead of using the default `webpack` configuration that Nest CLI ships with, we'll make sure to bundle all dependencies (`node_modules`) together, as follows:
 
 ```javascript
 module.exports = (options, webpack) => {
@@ -109,11 +110,9 @@ module.exports = (options, webpack) => {
 
 ```
 
-:::info 提示
-要指示 Nest CLI 使用此配置，请在项目的根目录中创建一个新的 `webpack.config.js` 文件。
-:::
+> info **Hint** To instruct Nest CLI to use this configuration, create a new `webpack.config.js` file in the root directory of your project.
 
-使用此配置，我们获得了以下结果：
+With this configuration, we received the following results:
 
 |                                      |                  |
 | ------------------------------------ | ---------------- |
@@ -122,31 +121,27 @@ module.exports = (options, webpack) => {
 | Nest (standalone application)        | 0.0319s (31.9ms) |
 | Raw Node.js script                   | 0.0066s (6.6ms)  |
 
-:::info 注意
-机器：MacBook Pro Mid 2014, 2.5 GHz Quad-Core Intel Core i7, 16 GB 1600 MHz DDR3, SSD。
-:::
+> info **Note** Machine: MacBook Pro Mid 2014, 2.5 GHz Quad-Core Intel Core i7, 16 GB 1600 MHz DDR3, SSD.
 
-:::info 提示
-您可以通过应用额外的代码压缩和优化技术（使用 `webpack` 插件等）进一步优化它。
-:::
+> info **Hint** You could optimize it even further by applying additional code minification & optimization techniques (using `webpack` plugins, etc.).
 
-如您所见，编译方式（以及是否打包代码）至关重要，对整体启动时间有重大影响。使用 `webpack`，您可以将独立 Nest 应用程序（具有一个模块、控制器和服务的入门项目）的引导时间平均降低到约 32ms，对于常规的基于 HTTP、express 的 NestJS 应用程序降低到约 81.5ms。
+As you can see, the way you compile (and whether you bundle your code) is crucial and has a significant impact on the overall startup time. With `webpack`, you can get the bootstrap time of a standalone Nest application (starter project with one module, controller, and service) down to ~32ms on average, and down to ~81.5ms for a regular HTTP, express-based NestJS app.
 
-对于更复杂的 Nest 应用程序，例如，具有 10 个资源（通过 `$ nest g resource` 原理图生成 = 10 个模块、10 个控制器、10 个服务、20 个 DTO 类、50 个 HTTP 端点 + `AppModule`），在 MacBook Pro Mid 2014, 2.5 GHz Quad-Core Intel Core i7, 16 GB 1600 MHz DDR3, SSD 上的整体启动时间约为 0.1298s (129.8ms)。将单体应用程序作为 serverless 函数运行通常没有太大意义，因此请将此基准测试更多地视为引导时间如何随着应用程序增长而可能增加的示例。
+For more complicated Nest applications, for example, with 10 resources (generated through `$ nest g resource` schematic = 10 modules, 10 controllers, 10 services, 20 DTO classes, 50 HTTP endpoints + `AppModule`), the overall startup on MacBook Pro Mid 2014, 2.5 GHz Quad-Core Intel Core i7, 16 GB 1600 MHz DDR3, SSD is approximately 0.1298s (129.8ms). Running a monolithic application as a serverless function typically doesn't make too much sense anyway, so think of this benchmark more as an example of how the bootstrap time may potentially increase as your application grows.
 
-#### 运行时优化
+#### Runtime optimizations
 
-到目前为止，我们涵盖了编译时优化。这些与您定义提供者和在应用程序中加载 Nest 模块的方式无关，而随着应用程序变大，这起着重要作用。
+Thus far we covered compile-time optimizations. These are unrelated to the way you define providers and load Nest modules in your application, and that plays an essential role as your application gets bigger.
 
-例如，假设有一个数据库连接定义为[异步提供者](/fundamentals/async-components)。异步提供者旨在延迟应用程序启动，直到完成一个或多个异步任务。
-这意味着，如果您的 serverless 函数平均需要 2 秒连接数据库（在引导时），您的端点将需要至少额外两秒（因为它必须等待连接建立）才能发回响应（当它是冷启动且您的应用程序尚未运行时）。
+For example, imagine having a database connection defined as an [asynchronous provider](/fundamentals/async-providers). Async providers are designed to delay the application start until one or more asynchronous tasks are completed.
+That means, if your serverless function on average requires 2s to connect to the database (on bootstrap), your endpoint will need at least two extra seconds (because it must wait till the connection is established) to send a response back (when it's a cold start and your application wasn't running already).
 
-如您所见，在引导时间很重要的 **serverless 环境**中，您构建提供者的方式有些不同。
-另一个很好的例子是如果您使用 Redis 进行缓存，但仅在某些情况下。也许在这种情况下，您不应该将 Redis 连接定义为异步提供者，因为它会减慢引导时间，即使此特定函数调用不需要它。
+As you can see, the way you structure your providers is somewhat different in a **serverless environment** where bootstrap time is important.
+Another good example is if you use Redis for caching, but only in certain scenarios. Perhaps, in this case, you should not define a Redis connection as an async provider, as it would slow down the bootstrap time, even if it's not required for this specific function invocation.
 
-此外，有时您可以使用 `LazyModuleLoader` 类延迟加载整个模块，如[本章](/fundamentals/lazy-loading-modules)所述。缓存也是这里的一个很好的例子。
-想象您的应用程序有 `CacheModule`，它内部连接到 Redis，并且还导出 `CacheService` 以与 Redis 存储交互。如果您不是所有潜在的函数调用都需要它，
-您可以只是按需延迟加载它。这样，对于所有不需要缓存的调用，您将获得更快的启动时间（当发生冷启动时）。
+Also, sometimes you could lazy load entire modules, using the `LazyModuleLoader` class, as described in [this chapter](/fundamentals/lazy-loading-modules). Caching is a great example here too.
+Imagine that your application has, let's say, `CacheModule` which internally connects to Redis and also, exports the `CacheService` to interact with the Redis storage. If you don't need it for all potential function invocations,
+you can just load it on-demand, lazily. This way you'll get a faster startup time (when a cold start occurs) for all invocations that don't require caching.
 
 ```typescript
 if (request.method === RequestMethod[RequestMethod.GET]) {
@@ -161,8 +156,8 @@ if (request.method === RequestMethod[RequestMethod.GET]) {
 
 ```
 
-另一个很好的例子是 webhook 或工作程序，根据某些特定条件（例如输入参数），可能执行不同的操作。
-在这种情况下，您可以在路由处理程序中指定一个条件，为特定函数调用延迟加载适当的模块，并只是延迟加载其他所有模块。
+Another great example is a webhook or worker, which depending on some specific conditions (e.g., input arguments), may perform different operations.
+In such a case, you could specify a condition inside your route handler that lazily loads an appropriate module for the specific function invocation, and just load every other module lazily.
 
 ```typescript
 if (workerType === WorkerType.A) {
@@ -177,17 +172,17 @@ if (workerType === WorkerType.A) {
 
 ```
 
-#### 示例集成
+#### Example integration
 
-应用程序入口文件（通常是 `main.ts` 文件）的外观**取决于多个因素**，因此**没有单一模板**适用于每个场景。
-例如，启动 serverless 函数所需的初始化文件因云提供商（AWS、Azure、GCP 等）而异。
-此外，根据您是想运行具有多个路由/端点的典型 HTTP 应用程序还是只提供单个路由（或执行特定代码部分），
-您的应用程序代码看起来会不同（例如，对于每个函数一个端点的方法，您可以使用 `NestFactory.createApplicationContext` 而不是启动 HTTP 服务器、设置中间件等）。
+The way your application's entry file (typically `main.ts` file) is supposed to look like **depends on several factors** and so **there's no single template** that just works for every scenario.
+For example, the initialization file required to spin up your serverless function varies by cloud providers (AWS, Azure, GCP, etc.).
+Also, depending on whether you want to run a typical HTTP application with multiple routes/endpoints or just provide a single route (or execute a specific portion of code),
+your application's code will look different (for example, for the endpoint-per-function approach you could use the `NestFactory.createApplicationContext` instead of booting the HTTP server, setting up middleware, etc.).
 
-仅出于说明目的，我们将 Nest（使用 `@nestjs/platform-express` 并因此启动整个、功能齐全的 HTTP 路由器）
-与 [Serverless](https://www.serverless.com/) 框架集成（在本例中，针对 AWS Lambda）。正如我们之前提到的，您的代码将因您选择的云提供商和许多其他因素而异。
+Just for illustration purposes, we'll integrate Nest (using `@nestjs/platform-express` and so spinning up the whole, fully functional HTTP router)
+with the [Serverless](https://www.serverless.com/) framework (in this case, targeting AWS Lambda). As we've mentioned earlier, your code will differ depending on the cloud provider you choose, and many other factors.
 
-首先，让我们安装所需的包：
+First, let's install the required packages:
 
 ```bash
 $ npm i @codegenie/serverless-express aws-lambda
@@ -195,11 +190,9 @@ $ npm i -D @types/aws-lambda serverless-offline
 
 ```
 
-:::info 提示
-为了加快开发周期，我们安装了 `serverless-offline` 插件，它模拟 AWS λ 和 API Gateway。
-:::
+> info **Hint** To speed up development cycles, we install the `serverless-offline` plugin which emulates AWS λ and API Gateway.
 
-安装过程完成后，让我们创建 `serverless.yml` 文件来配置 Serverless 框架：
+Once the installation process is complete, let's create the `serverless.yml` file to configure the Serverless framework:
 
 ```yaml
 service: serverless-example
@@ -224,11 +217,9 @@ functions:
 
 ```
 
-:::info 提示
-要了解有关 Serverless 框架的更多信息，请访问[官方文档](https://www.serverless.com/framework/docs/)。
-:::
+> info **Hint** To learn more about the Serverless framework, visit the [official documentation](https://www.serverless.com/framework/docs/).
 
-有了这些，我们现在可以导航到 `main.ts` 文件并使用所需的样板代码更新我们的引导代码：
+With this in place, we can now navigate to the `main.ts` file and update our bootstrap code with the required boilerplate:
 
 ```typescript
 import { NestFactory } from '@nestjs/core';
@@ -257,15 +248,11 @@ export const handler: Handler = async (
 
 ```
 
-:::info 提示
-要创建多个 serverless 函数并在它们之间共享公共模块，我们建议使用 [CLI Monorepo 模式](/cli/workspaces#monorepo-模式)。
-:::
+> info **Hint** For creating multiple serverless functions and sharing common modules between them, we recommend using the [CLI Monorepo mode](/cli/monorepo#monorepo-mode).
 
-:::warning 警告
-如果您使用 `@nestjs/swagger` 包，在 serverless 函数上下文中使其正常工作需要一些额外的步骤。查看此[线程](https://github.com/nestjs/swagger/issues/199)了解更多信息。
-:::
+> warning **Warning** If you use `@nestjs/swagger` package, there are a few additional steps required to make it work properly in the context of serverless function. Check out this [thread](https://github.com/nestjs/swagger/issues/199) for more information.
 
-接下来，打开 `tsconfig.json` 文件并确保启用 `esModuleInterop` 选项以使 `@codegenie/serverless-express` 包正确加载。
+Next, open up the `tsconfig.json` file and make sure to enable the `esModuleInterop` option to make the `@codegenie/serverless-express` package load properly.
 
 ```json
 {
@@ -277,7 +264,7 @@ export const handler: Handler = async (
 
 ```
 
-现在我们可以构建应用程序（使用 `nest build` 或 `tsc`）并使用 `serverless` CLI 在本地启动我们的 lambda 函数：
+Now we can build our application (with `nest build` or `tsc`) and use the `serverless` CLI to start our lambda function locally:
 
 ```bash
 $ npm run build
@@ -285,11 +272,11 @@ $ npx serverless offline
 
 ```
 
-应用程序运行后，打开浏览器并导航到 `http://localhost:3000/dev/[ANY_ROUTE]`（其中 `[ANY_ROUTE]` 是您应用程序中注册的任何端点）。
+Once the application is running, open your browser and navigate to `http://localhost:3000/dev/[ANY_ROUTE]` (where `[ANY_ROUTE]` is any endpoint registered in your application).
 
-在上面的部分中，我们已经展示了使用 `webpack` 和打包应用程序可以对整体引导时间产生重大影响。
-但是，要使其与我们的示例一起工作，您必须在 `webpack.config.js` 文件中添加一些额外的配置。通常，
-为了确保我们的 `handler` 函数被拾取，我们必须将 `output.libraryTarget` 属性更改为 `commonjs2`。
+In the sections above, we've shown that using `webpack` and bundling your app can have significant impact on the overall bootstrap time.
+However, to make it work with our example, there are a few additional configurations you must add in your `webpack.config.js` file. Generally,
+to make sure our `handler` function will be picked up, we must change the `output.libraryTarget` property to `commonjs2`.
 
 ```javascript
 return {
@@ -299,14 +286,14 @@ return {
     ...options.output,
     libraryTarget: 'commonjs2',
   },
-  // ... 其余配置
+  // ... the rest of the configuration
 };
 
 ```
 
-有了这些，您现在可以使用 `$ nest build --webpack` 编译函数代码（然后使用 `$ npx serverless offline` 测试它）。
+With this in place, you can now use `$ nest build --webpack` to compile your function's code (and then `$ npx serverless offline` to test it).
 
-还建议（但**不是必需的**，因为它会减慢您的构建过程）安装 `terser-webpack-plugin` 包并覆盖其配置以在压缩生产构建时保持类名完整。不这样做可能会导致在应用程序中使用 `class-validator` 时出现不正确的行为。
+It's also recommended (but **not required** as it will slow down your build process) to install the `terser-webpack-plugin` package and override its configuration to keep classnames intact when minifying your production build. Not doing so can result in incorrect behavior when using `class-validator` within your application.
 
 ```javascript
 const TerserPlugin = require('terser-webpack-plugin');
@@ -327,15 +314,15 @@ return {
     ...options.output,
     libraryTarget: 'commonjs2',
   },
-  // ... 其余配置
+  // ... the rest of the configuration
 };
 
 ```
 
-#### 使用独立应用程序功能
+#### Using standalone application feature
 
-或者，如果您想保持函数非常轻量级，并且不需要任何 HTTP 相关功能（路由，还有守卫、拦截器、管道等），
-您可以只使用 `NestFactory.createApplicationContext`（如前所述），而不是运行整个 HTTP 服务器（以及底层的 `express`），如下所示：
+Alternatively, if you want to keep your function very lightweight and you don't need any HTTP-related features (routing, but also guards, interceptors, pipes, etc.),
+you can just use `NestFactory.createApplicationContext` (as mentioned earlier) instead of running the entire HTTP server (and `express` under the hood), as follows:
 
 ```typescript
 import { HttpStatus } from '@nestjs/common';
@@ -360,11 +347,9 @@ export const handler: Handler = async (
 
 ```
 
-:::info 提示
-请注意，`NestFactory.createApplicationContext` 不会用增强器（守卫、拦截器等）包装控制器方法。为此，您必须使用 `NestFactory.create` 方法。
-:::
+> info **Hint** Be aware that `NestFactory.createApplicationContext` does not wrap controller methods with enhancers (guard, interceptors, etc.). For this, you must use the `NestFactory.create` method.
 
-您也可以将 `event` 对象向下传递给 `EventsService` 提供者，该提供者可以处理它并返回相应的值（取决于输入值和您的业务逻辑）。
+You could also pass the `event` object down to, let's say, `EventsService` provider that could process it and return a corresponding value (depending on the input value and your business logic).
 
 ```typescript
 export const handler: Handler = async (

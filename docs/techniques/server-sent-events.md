@@ -1,10 +1,14 @@
-### 服务器发送事件
+<!-- 此文件从 content/techniques/server-sent-events.md 自动生成，请勿直接修改此文件 -->
+<!-- 生成时间: 2026-07-02T03:10:47.952Z -->
+<!-- 源文件: content/techniques/server-sent-events.md -->
 
-服务器发送事件（SSE）是一种服务器推送技术，使客户端能够通过 HTTP 连接从服务器接收自动更新。每个通知都作为一块文本发送，以一对换行符终止（在[这里](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events)了解更多）。
+### Server-Sent Events
 
-#### 用法
+Server-Sent Events (SSE) is a server push technology enabling a client to receive automatic updates from a server via HTTP connection. Each notification is sent as a block of text terminated by a pair of newlines (learn more [here](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events)).
 
-要在路由（在**控制器类**中注册的路由）上启用服务器发送事件，请使用 `@Sse()` 装饰器注释方法处理程序。
+#### Usage
+
+To enable Server-Sent events on a route (route registered within a **controller class**), annotate the method handler with the `@Sse()` decorator.
 
 ```typescript
 @Sse('sse')
@@ -14,17 +18,13 @@ sse(): Observable<MessageEvent> {
 
 ```
 
-:::info 提示
-`@Sse()` 装饰器和 `MessageEvent` 接口从 `@nestjs/common` 导入，而 `Observable`、`interval` 和 `map` 从 `rxjs` 包导入。
-:::
+> info **Hint** The `@Sse()` decorator and `MessageEvent` interface are imported from the `@nestjs/common`, while `Observable`, `interval`, and `map` are imported from the `rxjs` package.
 
-:::warning 警告
-服务器发送事件路由必须返回 `Observable` 流。
-:::
+> warning **Warning** Server-Sent Events routes must return an `Observable` stream.
 
-在上面的示例中，我们定义了一个名为 `sse` 的路由，它允许我们传播实时更新。可以使用 [EventSource API](https://developer.mozilla.org/en-US/docs/Web/API/EventSource) 监听这些事件。
+In the example above, we defined a route named `sse` that will allow us to propagate real-time updates. These events can be listened to using the [EventSource API](https://developer.mozilla.org/en-US/docs/Web/API/EventSource).
 
-`sse` 方法返回一个发出多个 `MessageEvent` 的 `Observable`（在此示例中，它每秒发出一个新的 `MessageEvent`）。`MessageEvent` 对象应遵循以下接口以匹配规范：
+The `sse` method returns an `Observable` that emits multiple `MessageEvent` (in this example, it emits a new `MessageEvent` every second). The `MessageEvent` object should respect the following interface to match the specification:
 
 ```typescript
 export interface MessageEvent {
@@ -36,11 +36,11 @@ export interface MessageEvent {
 
 ```
 
-有了这个，我们现在可以在客户端应用程序中创建 `EventSource` 类的实例，将 `/sse` 路由（与我们在上面的 `@Sse()` 装饰器中传递的端点匹配）作为构造函数参数传递。
+With this in place, we can now create an instance of the `EventSource` class in our client-side application, passing the `/sse` route (which matches the endpoint we have passed into the `@Sse()` decorator above) as a constructor argument.
 
-`EventSource` 实例打开到 HTTP 服务器的持久连接，该服务器以 `text/event-stream` 格式发送事件。连接保持打开状态，直到通过调用 `EventSource.close()` 关闭。
+`EventSource` instance opens a persistent connection to an HTTP server, which sends events in `text/event-stream` format. The connection remains open until closed by calling `EventSource.close()`.
 
-一旦连接打开，来自服务器的传入消息将以事件的形式传递给你的代码。如果传入消息中有事件字段，则触发的事件与事件字段值相同。如果不存在事件字段，则触发通用的 `message` 事件（[来源](https://developer.mozilla.org/en-US/docs/Web/API/EventSource)）。
+Once the connection is opened, incoming messages from the server are delivered to your code in the form of events. If there is an event field in the incoming message, the triggered event is the same as the event field value. If no event field is present, then a generic `message` event is fired ([source](https://developer.mozilla.org/en-US/docs/Web/API/EventSource)).
 
 ```javascript
 const eventSource = new EventSource('/sse');
@@ -50,6 +50,25 @@ eventSource.onmessage = ({ data }) => {
 
 ```
 
-#### 示例
+#### Client disconnection
 
-一个可工作的示例可在[这里](https://github.com/nestjs/nest/tree/master/sample/28-sse)找到。
+When a client closes the SSE connection (e.g., `eventSource.close()`), NestJS automatically unsubscribes from the returned Observable, which stops the event stream and cleans up any associated resources — including the interval timer in the example above.
+
+To run custom teardown logic when a client disconnects, use the `finalize` operator:
+
+```typescript
+@Sse('sse')
+sse(): Observable<MessageEvent> {
+  return interval(1000).pipe(
+    map((_) => ({ data: { hello: 'world' } })),
+    finalize(() => console.log('Client disconnected')),
+  );
+}
+
+```
+
+> info **Hint** The `finalize` operator (imported from `rxjs`) executes its callback whenever the Observable terminates — by completion, error, or unsubscription (which includes client disconnect). This makes it the right place to release external resources such as database cursors or file handles tied to the stream.
+
+#### Example
+
+A working example is available [here](https://github.com/nestjs/nest/tree/master/sample/28-sse).
