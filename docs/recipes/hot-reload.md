@@ -1,31 +1,33 @@
-### 热重载
+<!-- 此文件从 content/recipes/hot-reload.md 自动生成，请勿直接修改此文件 -->
+<!-- 生成时间: 2026-09-23T07:24:23.590Z -->
+<!-- 源文件: content/recipes/hot-reload.md -->
 
-对应用程序启动过程影响最大的是 **TypeScript 编译** 。幸运的是，借助 [webpack](https://github.com/webpack/webpack) 的 HMR（热模块替换）功能，我们无需在每次变更时重新编译整个项目。这大幅减少了实例化应用程序所需的时间，使迭代开发变得更加轻松。
+### Hot Reload
 
-:::warning 警告
-请注意 `webpack` 不会自动将资源文件（例如 `graphql` 文件）复制到 `dist` 目录。同样地，`webpack` 也不支持通配符静态路径（例如 `TypeOrmModule` 中的 `entities` 属性）。
-:::
+**TypeScript compilation** has the biggest impact on your application's bootstrapping time. With [webpack](https://github.com/webpack/webpack) HMR (Hot-Module Replacement), you don't need to recompile the entire project each time a change occurs. This significantly decreases the time it takes to instantiate your application and makes iterative development much faster.
 
-### 使用 CLI
+> warning **Warning** `webpack` doesn't automatically copy your assets (e.g., `graphql` files) to the `dist` folder. Similarly, `webpack` isn't compatible with static glob paths (e.g., the `entities` property in `TypeOrmModule`).
 
-若您使用 [Nest CLI](../cli/overview)，配置过程相当简单。该 CLI 封装了 `webpack`，因此可以使用 `HotModuleReplacementPlugin`。
+> warning **Warning** As of NestJS v12, the webpack builder is **deprecated** and Rspack is the default bundler for monorepos. This recipe targets webpack-based CommonJS projects, which is why the examples below use `module.hot` and a plain `bootstrap()` call rather than the ESM top-level `await` used elsewhere in these docs. For new projects, prefer `--builder rspack`.
 
-#### 安装
+### With CLI
 
-首先安装所需依赖包：
+If you use the [Nest CLI](/cli/overview), the configuration process is straightforward. The CLI wraps `webpack`, which lets you use the `HotModuleReplacementPlugin`.
+
+#### Installation
+
+First, install the required packages:
 
 ```bash
 $ npm i --save-dev webpack-node-externals run-script-webpack-plugin webpack
 
 ```
 
-:::info 提示
-若使用 **Yarn Berry**（非经典版 Yarn），请安装 `webpack-pnp-externals` 而非 `webpack-node-externals`。
-:::
+> info **Hint** If you use **Yarn Berry** (not classic Yarn), install the `webpack-pnp-externals` package instead of `webpack-node-externals`.
 
-#### 配置
+#### Configuration
 
-安装完成后，在应用程序的根目录下创建一个 `webpack-hmr.config.js` 文件。
+Once the installation is complete, create a `webpack-hmr.config.js` file in the root directory of your application:
 
 ```typescript
 const nodeExternals = require('webpack-node-externals');
@@ -46,76 +48,80 @@ module.exports = function (options, webpack) {
       new webpack.WatchIgnorePlugin({
         paths: [/\.js$/, /\.d\.ts$/],
       }),
-      new RunScriptWebpackPlugin({
-        name: options.output.filename,
-        autoRestart: false,
-      }),
+      new RunScriptWebpackPlugin({ name: options.output.filename, autoRestart: false }),
     ],
   };
 };
 
 ```
 
-:::info 提示
-使用 **Yarn Berry**（非经典 Yarn）时，不要在 `externals` 配置属性中使用 `nodeExternals`，而应改用 `webpack-pnp-externals` 包中的 `WebpackPnpExternals`： `WebpackPnpExternals({ exclude: ['webpack/hot/poll?100'] })` 。
-:::
+> info **Hint** With **Yarn Berry** (not classic Yarn), instead of using `nodeExternals` in the `externals` configuration property, use `WebpackPnpExternals` from the `webpack-pnp-externals` package: `WebpackPnpExternals({{ '{' }} exclude: ['webpack/hot/poll?100'] {{ '}' }})`.
 
-该函数第一个参数接收包含默认 webpack 配置的原始对象，第二个参数接收 Nest CLI 使用的底层 `webpack` 包引用。它返回一个修改后的 webpack 配置，其中包含 `HotModuleReplacementPlugin`、`WatchIgnorePlugin` 和 `RunScriptWebpackPlugin` 插件。
+This function takes the original object containing the default webpack configuration as its first argument, and a reference to the underlying `webpack` package used by the Nest CLI as its second argument. It returns a modified webpack configuration with the `HotModuleReplacementPlugin`, `WatchIgnorePlugin`, and `RunScriptWebpackPlugin` plugins.
 
-#### 热模块替换
+#### Hot-Module Replacement
 
-要启用 **HMR**，请打开应用程序入口文件(`main.ts`)并添加以下 webpack 相关指令：
+To enable **HMR**, open the application entry file (`main.ts`) and add the following webpack-related instructions:
 
 ```typescript
 declare const module: any;
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  if (module.hot?.data?.closePromise) {
+    // wait for the previous application instance to fully shut down
+    await module.hot.data.closePromise;
+  }
+
+  const app = await NestFactory.create(AppModule, {
+    forceCloseConnections: !!module.hot,
+  });
   await app.listen(process.env.PORT ?? 3000);
 
   if (module.hot) {
     module.hot.accept();
-    module.hot.dispose(() => app.close());
+    module.hot.dispose((data: any) => {
+      data.closePromise = app.close();
+    });
   }
 }
 bootstrap();
 
 ```
 
-为简化执行流程，请在 `package.json` 文件中添加一个脚本。
+> info **Hint** `app.close()` is asynchronous, but webpack does not await the `dispose()` callback. Stashing the returned promise on `module.hot.data` lets the next application instance await it before binding to the port again, which (together with `forceCloseConnections`) prevents `EADDRINUSE` errors on reload.
+
+To simplify the execution process, add a script to your `package.json` file:
 
 ```json
 "start:dev": "nest build --webpack --webpackPath webpack-hmr.config.js --watch"
 
 ```
 
-现在只需打开命令行并运行以下命令：
+Then run the following command:
 
 ```bash
 $ npm run start:dev
 
 ```
 
-### 无命令行界面
+### Without CLI
 
-如果不使用 [Nest CLI](../cli/overview)，配置会稍显复杂（需要更多手动步骤）。
+If you don't use the [Nest CLI](/cli/overview), the configuration is slightly more complex and requires more manual steps.
 
-#### 安装
+#### Installation
 
-首先安装所需依赖包：
+First, install the required packages:
 
 ```bash
 $ npm i --save-dev webpack webpack-cli webpack-node-externals ts-loader run-script-webpack-plugin
 
 ```
 
-:::info 提示
-如果使用 **Yarn Berry**（非经典版 Yarn），请安装 `webpack-pnp-externals` 包而非 `webpack-node-externals`。
-:::
+> info **Hint** If you use **Yarn Berry** (not classic Yarn), install the `webpack-pnp-externals` package instead of `webpack-node-externals`.
 
-#### 配置
+#### Configuration
 
-安装完成后，在应用程序的根目录下创建一个 `webpack.config.js` 文件。
+Once the installation is complete, create a `webpack.config.js` file in the root directory of your application:
 
 ```typescript
 const webpack = require('webpack');
@@ -144,10 +150,7 @@ module.exports = {
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],
   },
-  plugins: [
-    new webpack.HotModuleReplacementPlugin(),
-    new RunScriptWebpackPlugin({ name: 'server.js', autoRestart: false }),
-  ],
+  plugins: [new webpack.HotModuleReplacementPlugin(), new RunScriptWebpackPlugin({ name: 'server.js', autoRestart: false })],
   output: {
     path: path.join(__dirname, 'dist'),
     filename: 'server.js',
@@ -156,46 +159,55 @@ module.exports = {
 
 ```
 
-:::info 提示
-使用 **Yarn Berry**（非经典版 Yarn）时，不要在 `externals` 配置属性中使用 `nodeExternals`，而应改用 `webpack-pnp-externals` 包中的 `WebpackPnpExternals`： `WebpackPnpExternals({ exclude: ['webpack/hot/poll?100'] })` 。
-:::
+> info **Hint** With **Yarn Berry** (not classic Yarn), instead of using `nodeExternals` in the `externals` configuration property, use `WebpackPnpExternals` from the `webpack-pnp-externals` package: `WebpackPnpExternals({{ '{' }} exclude: ['webpack/hot/poll?100'] {{ '}' }})`.
 
-此配置向 webpack 说明了关于应用程序的几个关键信息：入口文件的位置、存放**编译后**文件的目录，以及用于编译源文件的加载器类型。通常即使您不完全理解所有选项，也可以直接使用此文件。
+This configuration tells webpack a few essential things about your application: the location of the entry file, the directory that holds the **compiled** files, and the loader used to compile source files. You can generally use this file as-is, even if you don't fully understand all of the options.
 
-#### 热模块替换
+#### Hot-Module Replacement
 
-要启用 **HMR**，请打开应用程序入口文件(`main.ts`)并添加以下 webpack 相关指令：
+To enable **HMR**, open the application entry file (`main.ts`) and add the following webpack-related instructions:
 
 ```typescript
 declare const module: any;
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  if (module.hot?.data?.closePromise) {
+    // wait for the previous application instance to fully shut down
+    await module.hot.data.closePromise;
+  }
+
+  const app = await NestFactory.create(AppModule, {
+    forceCloseConnections: !!module.hot,
+  });
   await app.listen(process.env.PORT ?? 3000);
 
   if (module.hot) {
     module.hot.accept();
-    module.hot.dispose(() => app.close());
+    module.hot.dispose((data: any) => {
+      data.closePromise = app.close();
+    });
   }
 }
 bootstrap();
 
 ```
 
-为简化执行流程，请在 `package.json` 文件中添加一个脚本。
+> info **Hint** `app.close()` is asynchronous, but webpack does not await the `dispose()` callback. Stashing the returned promise on `module.hot.data` lets the next application instance await it before binding to the port again, which (together with `forceCloseConnections`) prevents `EADDRINUSE` errors on reload.
+
+To simplify the execution process, add a script to your `package.json` file:
 
 ```json
 "start:dev": "webpack --config webpack.config.js --watch"
 
 ```
 
-现在只需打开命令行并运行以下命令：
+Then run the following command:
 
 ```bash
 $ npm run start:dev
 
 ```
 
-#### 示例
+#### Example
 
-一个可用的示例[在此处](https://github.com/nestjs/nest/tree/master/sample/08-webpack)查看。
+A working example is available in the [webpack sample](https://github.com/nestjs/nest/tree/master/sample/08-webpack) on GitHub.
