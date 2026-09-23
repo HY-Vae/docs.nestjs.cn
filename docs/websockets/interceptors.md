@@ -1,6 +1,10 @@
+<!-- 此文件从 content/websockets/interceptors.md 自动生成，请勿直接修改此文件 -->
+<!-- 生成时间: 2026-09-23T07:24:23.603Z -->
+<!-- 源文件: content/websockets/interceptors.md -->
+
 ### Interceptors
 
-There is no difference between [regular interceptors](/interceptors) and web sockets interceptors. The following example uses a manually instantiated method-scoped interceptor. Just as with HTTP based applications, you can also use gateway-scoped interceptors (i.e., prefix the gateway class with a `@UseInterceptors()` decorator).
+There is no difference between [regular interceptors](/interceptors) and WebSocket interceptors. The following example uses a manually instantiated method-scoped interceptor. As with HTTP-based applications, you can also use gateway-scoped interceptors (i.e., decorate the gateway class with `@UseInterceptors()`). Global interceptors registered with `app.useGlobalInterceptors()` or the `APP_INTERCEPTOR` token apply to gateways as well.
 
 ```typescript
 @UseInterceptors(new TransformInterceptor())

@@ -1,14 +1,16 @@
-### 管道
+<!-- 此文件从 content/microservices/pipes.md 自动生成，请勿直接修改此文件 -->
+<!-- 生成时间: 2026-09-23T07:24:23.598Z -->
+<!-- 源文件: content/microservices/pipes.md -->
 
-与微服务管道之间没有基本区别。唯一的区别是，您应该使用 `RpcException` 而不是抛出 `HttpException`。
+### Pipes
 
-> 信息 **提示** `RpcException` 类来自 `@nestjs/microservices` 包。
+Microservice pipes work the same way as [regular pipes](/pipes). The only difference is that they should throw `RpcException` instead of `HttpException`. Unless a custom exception filter handles it, an `HttpException` thrown during message handling reaches the client as a generic `Internal server error` message.
 
-#### 绑定管道
+> info **Hint** The `RpcException` class is exposed from the `@nestjs/microservices` package.
 
-以下示例使用手动实例化的方法作用域管道。与基于 HTTP 的应用程序一样，您也可以使用控制器作用域管道（即在控制器类前添加 `@UsePipes()` 装饰器）。
+#### Binding pipes
 
-```typescript
+The following example uses a manually instantiated method-scoped pipe. The `exceptionFactory` option makes `ValidationPipe` throw an `RpcException` instead of its default `BadRequestException`. As with HTTP-based applications, you can also use controller-scoped pipes (i.e., prefix the controller class with a `@UsePipes()` decorator).
 
 ```typescript
 @UsePipes(new ValidationPipe({ exceptionFactory: (errors) => new RpcException(errors) }))
@@ -19,4 +21,15 @@ accumulate(data: number[]): number {
 
 ```
 
-Note: I followed the translation guidelines, keeping the code examples, variable names, function names unchanged, and translating code comments from English to Chinese. I also removed the 
+The `@Payload()` decorator also accepts a `schema` option, which lets `StandardSchemaValidationPipe` (exported from `@nestjs/common`) validate the payload against a [Standard Schema](/application/validation#schema-based-validation) (e.g., a Zod schema). Configure its `exceptionFactory` option in the same way, so that validation errors are thrown as `RpcException`:
+
+```typescript
+@UsePipes(new StandardSchemaValidationPipe({ exceptionFactory: (issues) => new RpcException(issues) }))
+@MessagePattern({ cmd: 'sum' })
+accumulate(@Payload({ schema: z.array(z.number()) }) data: number[]): number {
+  return data.reduce((a, b) => a + b, 0);
+}
+
+```
+
+> info **Hint** Global pipes registered on the main HTTP application don't apply to microservices connected to a [hybrid application](/faq/hybrid-application) unless you set the `inheritAppConfig` option. See [sharing configuration](/faq/hybrid-application#sharing-configuration).

@@ -1,19 +1,19 @@
 <!-- 此文件从 content/fundamentals/discovery-service.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-03-12T13:42:20.390Z -->
+<!-- 生成时间: 2026-09-23T07:24:23.596Z -->
 <!-- 源文件: content/fundamentals/discovery-service.md -->
 
-### 发现服务
+### Discovery service
 
-`@nestjs/core` 包提供的 `DiscoveryService` 是一个强大的实用工具，允许开发人员在 NestJS 应用程序中动态检查和检索提供者、控制器和其他元数据。这在构建依赖运行时内省的插件、装饰器或高级功能时特别有用。通过利用 `DiscoveryService`，开发人员可以创建更灵活和模块化的架构，从而在应用程序中实现自动化和动态行为。
+The `DiscoveryService`, provided by the `@nestjs/core` package, lets you dynamically inspect and retrieve providers, controllers, and their metadata within a NestJS application. This is particularly useful when building plugins, decorators, or advanced features that rely on runtime introspection, and lets you build more flexible, modular architectures with automated, dynamic behavior.
 
-#### 入门
+#### Getting started
 
-在使用 `DiscoveryService` 之前，你需要在你打算使用它的模块中导入 `DiscoveryModule`。这确保了该服务可用于依赖注入。以下是如何在 NestJS 模块中配置它的示例：
+Before using `DiscoveryService`, import the `DiscoveryModule` into the module where you intend to use it. This makes the service available for dependency injection:
 
 ```typescript
 import { Module } from '@nestjs/common';
 import { DiscoveryModule } from '@nestjs/core';
-import { ExampleService } from './example.service';
+import { ExampleService } from './example.service.js';
 
 @Module({
   imports: [DiscoveryModule],
@@ -23,7 +23,7 @@ export class ExampleModule {}
 
 ```
 
-一旦模块设置完成，`DiscoveryService` 就可以注入到任何需要动态发现的提供者或服务中。
+Once the module is set up, you can inject `DiscoveryService` into any provider that needs dynamic discovery:
 
 ```typescript
 @Injectable()
@@ -33,9 +33,9 @@ export class ExampleService {
 
 ```
 
-#### 发现提供者和控制器
+#### Discovering providers and controllers
 
-`DiscoveryService` 的关键功能之一是检索应用程序中所有注册的提供者。这对于根据特定条件动态处理提供者很有用。以下代码片段演示了如何访问所有提供者：
+A key capability of `DiscoveryService` is retrieving all registered providers in the application, which is useful for dynamically processing providers based on specific conditions. The following snippet retrieves all providers:
 
 ```typescript
 const providers = this.discoveryService.getProviders();
@@ -43,7 +43,7 @@ console.log(providers);
 
 ```
 
-每个提供者对象都包含其实例、令牌和元数据等信息。同样，如果你需要检索应用程序中所有注册的控制器，可以使用：
+Each returned object is an `InstanceWrapper`, which holds information such as the provider's instance, token, and class (`metatype`). Similarly, to retrieve all registered controllers within the application, use:
 
 ```typescript
 const controllers = this.discoveryService.getControllers();
@@ -51,13 +51,22 @@ console.log(controllers);
 
 ```
 
-此功能对于需要动态处理控制器的场景特别有用，例如分析跟踪或自动注册机制。
+This is useful when controllers need to be processed dynamically, e.g., for analytics tracking or automatic registration mechanisms.
 
-#### 提取元数据
+Both methods accept an optional options object. Pass an `include` array of module classes to limit discovery to those modules:
 
-除了发现提供者和控制器外，`DiscoveryService` 还可以检索附加到这些组件的元数据。这在使用在运行时存储元数据的自定义装饰器时特别有价值。
+```typescript
+const providers = this.discoveryService.getProviders({
+  include: [CatsModule],
+});
 
-例如，考虑一个使用自定义装饰器为提供者标记特定元数据的情况：
+```
+
+#### Extracting metadata
+
+Beyond discovering providers and controllers, `DiscoveryService` also retrieves metadata attached to these components. This is particularly valuable when working with custom decorators that store metadata at runtime.
+
+For example, consider a custom decorator used to tag providers with specific metadata:
 
 ```typescript
 import { DiscoveryService } from '@nestjs/core';
@@ -66,11 +75,11 @@ export const FeatureFlag = DiscoveryService.createDecorator();
 
 ```
 
-将此装饰器应用于服务可以存储稍后可以查询的元数据：
+Applying this decorator to a service stores metadata that can later be queried:
 
 ```typescript
 import { Injectable } from '@nestjs/common';
-import { FeatureFlag } from './custom-metadata.decorator';
+import { FeatureFlag } from './custom-metadata.decorator.js';
 
 @Injectable()
 @FeatureFlag('experimental')
@@ -78,7 +87,7 @@ export class CustomService {}
 
 ```
 
-一旦以这种方式将元数据附加到提供者，`DiscoveryService` 就可以轻松地根据分配的元数据过滤提供者。以下代码片段演示了如何检索已标记特定元数据值的提供者：
+Once metadata is attached to providers this way, you can use `DiscoveryService` to filter providers based on the assigned metadata. The following snippet retrieves a provider tagged with a specific metadata value:
 
 ```typescript
 const providers = this.discoveryService.getProviders();
@@ -90,12 +99,23 @@ const [provider] = providers.filter(
 );
 
 console.log(
-  '具有 "experimental" 功能标志元数据的提供者：',
+  'Providers with the "experimental" feature flag metadata:',
   provider,
 );
 
 ```
 
-#### 总结
+Decorators created with `DiscoveryService.createDecorator()` also register the classes they decorate, so you can retrieve only those classes by passing the decorator's `KEY` as the `metadataKey` option, instead of filtering all providers yourself:
 
-`DiscoveryService` 是一个多功能且强大的工具，可在 NestJS 应用程序中实现运行时内省。通过允许动态发现提供者、控制器和元数据，它在构建可扩展框架、插件和自动化驱动功能方面发挥着关键作用。无论你需要扫描和处理提供者、提取元数据进行高级处理，还是创建模块化和可扩展的架构，`DiscoveryService` 都提供了一种高效且结构化的方法来实现这些目标。
+```typescript
+const providers = this.discoveryService.getProviders({
+  metadataKey: FeatureFlag.KEY,
+});
+
+```
+
+The same decorator can also be applied to methods. To read method-level metadata, pass the method name as the third argument to `getMetadataByDecorator()`.
+
+#### Conclusion
+
+`DiscoveryService` enables runtime introspection in NestJS applications. By discovering providers, controllers, and their metadata dynamically, it serves as a building block for extensible frameworks, plugins, and automation-driven features, whether you need to scan and process providers, extract metadata for further processing, or build modular architectures.
