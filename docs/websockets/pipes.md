@@ -1,19 +1,44 @@
 <!-- 此文件从 content/websockets/pipes.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-03-12T12:02:29.184Z -->
+<!-- 生成时间: 2026-09-24T07:16:08.325Z -->
 <!-- 源文件: content/websockets/pipes.md -->
 
-### 管道
+### Pipes
 
-和 Web Socket 管道之间没有本质区别。唯一的区别是取代抛出 `HttpException` 而使用 `WsException`。此外，所有管道将仅应用于 `data` 参数（因为验证或转换 `client` 实例是无用的）。
+There is no fundamental difference between [regular pipes](/pipes) and WebSocket pipes. The only difference is that instead of throwing `HttpException`, you should throw `WsException`. Only a `WsException` reaches the client with its own message. Any other exception, including the `BadRequestException` that the built-in validation pipes throw by default, is reported to the client as `'Internal server error'`.
 
-> 提示 **Hint** `WsException` 类来自 `@nestjs/websockets` 包。
+> info **Hint** The `WsException` class is exposed from the `@nestjs/websockets` package.
 
-#### 绑定管道
+#### Binding pipes
 
-以下示例使用手动实例化的方法作用域管道。与 HTTP 基于应用程序一样，你也可以使用网关作用域管道（即在网关类前缀一个 `@UsePipes()` 装饰器）。
+The following example uses a manually instantiated method-scoped pipe. As with HTTP-based applications, you can also use gateway-scoped pipes (i.e., decorate the gateway class with `@UsePipes()`). Global pipes registered with `app.useGlobalPipes()` or the `APP_PIPE` token apply to gateways as well.
 
 ```typescript
+@UsePipes(new ValidationPipe({ exceptionFactory: (errors) => new WsException(errors) }))
+@SubscribeMessage('events')
+handleEvent(client: Client, data: unknown): WsResponse<unknown> {
+  const event = 'events';
+  return { event, data };
+}
 
 ```
 
-Note: I've kept the code block unchanged, as per the requirements. I've also translated the text and followed the provided glossary.
+Method-, gateway-, and global-scoped pipes run for every parameter of the message handler. To transform or validate only the message payload, bind the pipe at the parameter level instead, e.g., `@MessageBody(new ParseIntPipe())` or `@MessageBody('id', ParseIntPipe)`.
+
+#### Schema-based validation
+
+Like the HTTP parameter decorators, `@MessageBody()` accepts an options object with a `schema` property. The schema can come from any [Standard Schema](https://standardschema.dev/) compatible library, such as Zod, Valibot, or ArkType. The built-in `StandardSchemaValidationPipe` validates the payload against that schema, and passes parameters without a schema through unchanged. See [Schema-based validation](/application/validation#schema-based-validation) for details.
+
+```typescript
+@UsePipes(
+  new StandardSchemaValidationPipe({
+    exceptionFactory: (issues) => new WsException(issues),
+  }),
+)
+@SubscribeMessage('events')
+handleEvent(@MessageBody({ schema: createEventSchema }) data: CreateEventDto) {
+  return data;
+}
+
+```
+
+To extract a single property and validate it, pass the property key first: `@MessageBody('id', {{ '{' }} schema: z.number() {{ '}' }})`.

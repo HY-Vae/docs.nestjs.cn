@@ -1,25 +1,29 @@
 <!-- 此文件从 content/recipes/terminus.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-03-12T13:42:20.323Z -->
+<!-- 生成时间: 2026-09-24T07:16:08.320Z -->
 <!-- 源文件: content/recipes/terminus.md -->
 
-### 健康检查 (Terminus)
+### Healthchecks (Terminus)
 
-Terminus 集成为你提供**就绪/存活**健康检查。在复杂的后端设置中，健康检查至关重要。简而言之，Web 开发领域的健康检查通常由一个特殊地址组成，例如 `https://my-website.com/health/readiness`。你的基础设施的服务或组件（例如 [Kubernetes](https://kubernetes.io/)）会持续检查此地址。根据从此地址的 `GET` 请求返回的 HTTP 状态代码，当服务收到"不健康"响应时，将采取行动。由于"健康"或"不健康"的定义因你提供的服务类型而异，**Terminus** 集成为你提供了一组**健康指标**。
+The Terminus integration provides **readiness/liveness** health checks. Health checks are crucial in complex backend setups. In web development, a health check usually consists of a dedicated address, for example, `https://my-website.com/health/readiness`.
+A service or component of your infrastructure (e.g., [Kubernetes](https://kubernetes.io/)) checks this address continuously. Depending on the HTTP status code returned from a `GET` request to this address, the service takes action when it receives an "unhealthy" response.
+Because the definition of "healthy" or "unhealthy" varies with the type of service you provide, the **Terminus** integration offers a set of **health indicators**.
 
-例如，如果你的 Web 服务器使用 MongoDB 存储其数据，那么 MongoDB 是否仍在运行将是至关重要的信息。在这种情况下，你可以使用 `MongooseHealthIndicator`。如果配置正确（稍后会详细介绍），你的健康检查地址将返回健康或不健康的 HTTP 状态代码，具体取决于 MongoDB 是否正在运行。
+For example, if your web server uses MongoDB to store its data, whether MongoDB is still up and running is vital information.
+In that case, you can use the `MongooseHealthIndicator`. Once configured (as described below), your health check address returns
+a healthy or unhealthy HTTP status code, depending on whether MongoDB is running.
 
-#### 入门
+#### Getting started
 
-要开始使用 `@nestjs/terminus`，我们需要安装所需的依赖项。
+To get started with `@nestjs/terminus`, install the required dependency:
 
 ```bash
 $ npm install --save @nestjs/terminus
 
 ```
 
-#### 设置健康检查
+#### Setting up a Healthcheck
 
-健康检查表示**健康指标**的摘要。健康指标执行服务检查，无论它处于健康还是不健康状态。如果所有分配的健康指标都已启动并运行，则健康检查为阳性。由于许多应用程序需要类似的健康指标，[`@nestjs/terminus`](https://github.com/nestjs/terminus) 提供了一组预定义的指标，例如：
+A health check represents a summary of **health indicators**. A health indicator checks whether a service is in a healthy or unhealthy state. A health check is positive if all the assigned health indicators are up and running. Because many applications need similar health indicators, [`@nestjs/terminus`](https://github.com/nestjs/terminus) provides a set of predefined indicators:
 
 - `HttpHealthIndicator`
 - `TypeOrmHealthIndicator`
@@ -32,11 +36,9 @@ $ npm install --save @nestjs/terminus
 - `MemoryHealthIndicator`
 - `DiskHealthIndicator`
 
-要开始我们的第一个健康检查，让我们创建 `HealthModule` 并在其导入数组中导入 `TerminusModule`。
+To get started with our first health check, let's create the `HealthModule` and add the `TerminusModule` to its `imports` array.
 
-:::info 提示
-要使用 [Nest CLI](/cli/overview) 创建模块，只需执行 `$ nest g module health` 命令。
-:::
+> info **Hint** To create the module using the [Nest CLI](/cli/overview), run the `$ nest g module health` command.
 
 ```typescript
 import { Module } from '@nestjs/common';
@@ -49,29 +51,27 @@ export class HealthModule {}
 
 ```
 
-我们的健康检查可以使用[控制器](/controllers)执行，可以使用 [Nest CLI](/cli/overview) 轻松设置。
+Health checks are executed by a [controller](/controllers), which you can generate with the [Nest CLI](/cli/overview).
 
 ```bash
 $ nest g controller health
 
 ```
 
-:::info 信息
-强烈建议在你的应用程序中启用关闭钩子。如果启用，Terminus 集成会利用此生命周期事件。在[这里](/fundamentals/lifecycle-events#application-shutdown)阅读有关关闭钩子的更多信息。
-:::
+> info **Hint** We highly recommend enabling shutdown hooks in your application. When they are enabled, the Terminus integration uses this lifecycle event to report the `'shutting_down'` status and to apply the [graceful shutdown timeout](#graceful-shutdown-timeout). Learn more in the [application shutdown](/fundamentals/lifecycle-events#application-shutdown) section.
 
-#### HTTP 健康检查
+#### HTTP Healthcheck
 
-一旦我们安装了 `@nestjs/terminus`，导入了 `TerminusModule` 并创建了一个新控制器，我们就可以创建健康检查了。
+Once you have installed `@nestjs/terminus`, imported the `TerminusModule`, and created a new controller, you are ready to create a health check.
 
-`HTTPHealthIndicator` 需要 `@nestjs/axios` 包，因此请确保已安装它：
+The `HttpHealthIndicator` requires the `@nestjs/axios` package, so make sure it is installed:
 
 ```bash
 $ npm i --save @nestjs/axios axios
 
 ```
 
-现在我们可以设置我们的 `HealthController`：
+Now set up the `HealthController`:
 
 ```typescript
 import { Controller, Get } from '@nestjs/common';
@@ -99,7 +99,7 @@ export class HealthController {
 import { Module } from '@nestjs/common';
 import { TerminusModule } from '@nestjs/terminus';
 import { HttpModule } from '@nestjs/axios';
-import { HealthController } from './health.controller';
+import { HealthController } from './health.controller.js';
 
 @Module({
   imports: [TerminusModule, HttpModule],
@@ -109,7 +109,9 @@ export class HealthModule {}
 
 ```
 
-我们的健康检查现在将向 `https://docs.nestjs.com` 地址发送 _GET_ 请求。如果我们从该地址收到健康响应，我们在 `http://localhost:3000/health` 的路由将返回以下对象，状态代码为 200。
+The health check now sends a `GET` request to the `https://docs.nestjs.com` address. If
+that address returns a healthy response, the route at `http://localhost:3000/health` returns
+the following object with a `200` status code:
 
 ```json
 {
@@ -129,23 +131,26 @@ export class HealthModule {}
 
 ```
 
-可以使用 `HealthCheckResult` 接口从 `@nestjs/terminus` 包访问此响应对象的接口。
+The `@nestjs/terminus` package exports the type of this response object as `HealthCheckResult`.
 
 |           |                                                                                                                                                                                             |                                      |
 |-----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------|
-| `status`  | 如果任何健康指标失败，状态将为 `'error'`。如果 NestJS 应用程序正在关闭但仍接受 HTTP 请求，健康检查将具有 `'shutting_down'` 状态。 | `'error' \| 'ok' \| 'shutting_down'` |
-| `info`    | 包含每个状态为 `'up'` 的健康指标信息的对象，换句话说就是"健康"。                                                                              | `object`                             |
-| `error`   | 包含每个状态为 `'down'` 的健康指标信息的对象，换句话说就是"不健康"。                                                                          | `object`                             |
-| `details` | 包含每个健康指标的所有信息的对象                                                                                                                                  | `object`                             |
+| `status`  | If any health indicator failed, the status is `'error'`. If no indicator failed but at least one is `'degraded'`, the status is `'degraded'`. If the Nest application is shutting down but still accepting HTTP requests, the status is `'shutting_down'`. | `'error' \| 'ok' \| 'degraded' \| 'shutting_down'` |
+| `info`    | Object containing information about each health indicator whose status is `'up'` or `'degraded'`, in other words, "still serving".                                                                              | `object`                             |
+| `error`   | Object containing information about each health indicator whose status is `'down'`, in other words, "unhealthy".                                                                          | `object`                             |
+| `details` | Object containing information about every health indicator.                                                                                                                                | `object`                             |
 
-##### 检查特定的 HTTP 响应代码
+##### Check for specific HTTP response codes
 
-在某些情况下，你可能想要检查特定条件并验证响应。例如，假设 `https://my-external-service.com` 返回响应代码 `204`。使用 `HttpHealthIndicator.responseCheck`，你可以专门检查该响应代码，并将所有其他代码确定为不健康。
+In certain cases, you might want to check for specific criteria and validate the response. For example, assume
+`https://my-external-service.com` returns a `204` response code. With `HttpHealthIndicator.responseCheck()`, you can
+check for that response code specifically and treat all other codes as unhealthy.
 
-如果返回除 `204` 之外的任何其他响应代码，以下示例将不健康。第三个参数要求你提供一个函数（同步或异步），该函数返回一个布尔值，指示响应是否被认为是健康的（`true`）或不健康的（`false`）。
+In the following example, any response code other than `204` is unhealthy. The third parameter is a function (sync or async)
+that returns a boolean indicating whether the response is considered healthy (`true`) or unhealthy (`false`).
 
 ```typescript
-// 在 `HealthController` 类中
+// Within the `HealthController`-class
 
 @Get()
 @HealthCheck()
@@ -162,13 +167,12 @@ check() {
 
 ```
 
-#### TypeOrm 健康指标
+#### TypeOrm health indicator
 
-Terminus 提供了向你的健康检查添加数据库检查的功能。要开始使用此健康指标，你应该查看[数据库章节](/techniques/sql)，并确保你的应用程序中的数据库连接已建立。
+Terminus lets you add database checks to your health check. Before using this health indicator, read the
+[database](/data/typeorm) chapter and make sure your application's database connection is established.
 
-:::info 提示
-在幕后，`TypeOrmHealthIndicator` 只是执行一个 `SELECT 1` SQL 命令，该命令通常用于验证数据库是否仍然存活。如果你使用的是 Oracle 数据库，它使用 `SELECT 1 FROM DUAL`。
-:::
+> info **Hint** Behind the scenes, the `TypeOrmHealthIndicator` executes a `SELECT 1` SQL command, which is commonly used to verify whether the database is still alive. For Oracle databases, it uses `SELECT 1 FROM DUAL`, and for SAP HANA, `SELECT now() FROM dummy`.
 
 ```typescript
 @Controller('health')
@@ -182,34 +186,37 @@ export class HealthController {
   @HealthCheck()
   check() {
     return this.health.check([
-      () => this.db.pingCheck('database'),
+      () => this.db.pingCheck('database').withTimeout(1000),
     ]);
   }
 }
 
 ```
 
-如果你的数据库可访问，你现在应该在使用 `GET` 请求请求 `http://localhost:3000/health` 时看到以下 JSON 结果：
+If your database is reachable, a `GET` request to `http://localhost:3000/health` returns the following JSON result:
 
 ```json
 {
   "status": "ok",
   "info": {
     "database": {
-      "status": "up"
+      "status": "up",
+      "responseTime": 12
     }
   },
   "error": {},
   "details": {
     "database": {
-      "status": "up"
+      "status": "up",
+      "responseTime": 12
     }
   }
 }
 
 ```
 
-如果你的应用程序使用[多个数据库](/techniques/sql#多个数据库)，你需要将每个连接注入到你的 `HealthController` 中。然后，你可以简单地将连接引用传递给 `TypeOrmHealthIndicator`。
+If your application uses [multiple databases](/data/typeorm#multiple-databases), inject each
+data source into your `HealthController`. Then, pass the data source reference to the `TypeOrmHealthIndicator` using the `connection` option.
 
 ```typescript
 @Controller('health')
@@ -217,27 +224,29 @@ export class HealthController {
   constructor(
     private health: HealthCheckService,
     private db: TypeOrmHealthIndicator,
-    @InjectConnection('albumsConnection')
-    private albumsConnection: Connection,
-    @InjectConnection()
-    private defaultConnection: Connection,
+    @InjectDataSource('albumsConnection')
+    private albumsConnection: DataSource,
+    @InjectDataSource()
+    private defaultConnection: DataSource,
   ) {}
 
   @Get()
   @HealthCheck()
   check() {
     return this.health.check([
-      () => this.db.pingCheck('albums-database', { connection: this.albumsConnection }),
-      () => this.db.pingCheck('database', { connection: this.defaultConnection }),
+      () => this.db.pingCheck('albums-database', { connection: this.albumsConnection }).withTimeout(1000),
+      () => this.db.pingCheck('database', { connection: this.defaultConnection }).withTimeout(1000),
     ]);
   }
 }
 
 ```
 
-#### 磁盘健康指标
+#### Disk health indicator
 
-使用 `DiskHealthIndicator`，我们可以检查使用了多少存储空间。要开始，请确保将 `DiskHealthIndicator` 注入到你的 `HealthController` 中。以下示例检查路径 `/`（或在 Windows 上你可以使用 `C:\\`）的已用存储空间。如果超过总存储空间的 50%，它将响应不健康的健康检查。
+The `DiskHealthIndicator` checks how much storage is in use. To get started, inject the `DiskHealthIndicator`
+into your `HealthController`. The following example checks the storage used by the path `/` (on Windows, use `C:\\`).
+If more than 50% of the total storage space is used, the health check reports an unhealthy state.
 
 ```typescript
 @Controller('health')
@@ -258,10 +267,11 @@ export class HealthController {
 
 ```
 
-使用 `DiskHealthIndicator.checkStorage` 函数，你还可以检查固定数量的空间。如果路径 `/my-app/` 超过 250GB，以下示例将不健康。
+The `DiskHealthIndicator.checkStorage()` method can also check against a fixed amount of space.
+The following example is unhealthy if the storage used by the path `/` exceeds 250GB.
 
 ```typescript
-// 在 `HealthController` 类中
+// Within the `HealthController`-class
 
 @Get()
 @HealthCheck()
@@ -273,15 +283,12 @@ check() {
 
 ```
 
-#### 内存健康指标
+#### Memory health indicator
 
-为了确保你的进程不超过特定的内存限制，可以使用 `MemoryHealthIndicator`。以下示例可用于检查进程的堆。
+Use the `MemoryHealthIndicator` to make sure your process doesn't exceed a certain memory limit.
+The following example checks the heap of your process.
 
-:::info 提示
-堆是动态分配内存所在的内存部分（即通过 malloc 分配的内存）。从堆分配的内存将保持分配状态，直到发生以下情况之一：
-:::
-> - 内存被 _free_'d
-> - 程序终止
+> info **Hint** The heap is the portion of memory where dynamically allocated memory resides. `checkHeap()` compares the `heapUsed` value reported by `process.memoryUsage()` (the V8 heap memory currently in use) against the given threshold in bytes.
 
 ```typescript
 @Controller('health')
@@ -302,14 +309,15 @@ export class HealthController {
 
 ```
 
-还可以使用 `MemoryHealthIndicator.checkRSS` 验证进程的内存 RSS。如果你的进程确实分配了超过 150MB，此示例将返回不健康的响应代码。
+You can also verify the RSS of your process with `MemoryHealthIndicator.checkRSS()`. The following example
+returns an unhealthy response code if your process has more than 150MB allocated.
 
-:::info 提示
-RSS 是驻留集大小，用于显示该进程分配了多少内存，并且在 RAM 中。它不包括换出的内存。它包括共享库的内存，只要这些库的页面实际上在内存中。它包括所有堆栈和堆内存。
-:::
+> info **Hint** RSS (Resident Set Size) shows how much memory is allocated to the process and held in RAM.
+> It doesn't include memory that is swapped out. It does include memory from shared libraries, as long as the pages from
+> those libraries are actually in memory, as well as all stack and heap memory.
 
 ```typescript
-// 在 `HealthController` 类中
+// Within the `HealthController`-class
 
 @Get()
 @HealthCheck()
@@ -321,11 +329,112 @@ check() {
 
 ```
 
-#### 自定义健康指标
+#### Custom health indicator
 
-在某些情况下，`@nestjs/terminus` 提供的预定义健康指标不能涵盖你所有的健康检查要求。在这种情况下，你可以根据需要设置自定义健康指标。
+In some cases, the predefined health indicators provided by `@nestjs/terminus` don't cover all of your health check requirements. In that case, you can create a custom health indicator.
 
-让我们从创建一个将代表我们自定义指标的服务开始。为了对指标的结构有一个基本的了解，我们将创建一个示例 `DogHealthIndicator`。如果每个 `Dog` 对象的类型都是 `'goodboy'`，则此服务应具有状态 `'up'`。如果不满足该条件，则应抛出错误。
+Most health indicators follow the same pattern: run an operation, then mark the indicator as `'up'` if it succeeds and as `'down'` if it fails. The `HealthIndicatorService` implements this pattern with `attempt()`. To show how an indicator is structured, we will create an example `DogHealthIndicator`. This service should have the state `'up'` as long as an external dog API responds within one second.
+
+```typescript
+import { Injectable } from '@nestjs/common';
+import { HealthIndicatorService } from '@nestjs/terminus';
+
+@Injectable()
+export class DogHealthIndicator {
+  constructor(
+    private readonly healthIndicatorService: HealthIndicatorService
+  ) {}
+
+  isHealthy(key: string) {
+    return this.healthIndicatorService
+      .check(key)
+      .attempt(async ({ signal }) => {
+        const response = await fetch('https://dog.ceo/api/breeds/list', { signal });
+        const { message: breeds } = await response.json();
+
+        return { breeds: breeds.length };
+      })
+      .withTimeout(1000);
+  }
+}
+
+```
+
+`attempt()` accepts a sync or async function and marks the indicator as `'up'` once it resolves. Any data the function returns is appended to the result. If the function throws, the indicator is marked as `'down'` and the error message is added to the result. In both cases, the time the function took is reported as `responseTime`. `withTimeout()` limits the attempt to the given number of milliseconds (see [Timeouts and caching](#timeouts-and-caching)).
+
+Next, register the health indicator as a provider:
+
+```typescript
+import { Module } from '@nestjs/common';
+import { TerminusModule } from '@nestjs/terminus';
+import { DogHealthIndicator } from './dog.health.js';
+import { HealthController } from './health.controller.js';
+
+@Module({
+  controllers: [HealthController],
+  imports: [TerminusModule],
+  providers: [DogHealthIndicator]
+})
+export class HealthModule { }
+
+```
+
+> info **Hint** In a real-world application, the `DogHealthIndicator` should be provided in a separate module, for example, `DogModule`, which is then imported by the `HealthModule`.
+
+The last step is to add the new health indicator to the health check endpoint. Go back to the `HealthController` and add it to the `healthCheck()` method:
+
+```typescript
+import { HealthCheckService, HealthCheck } from '@nestjs/terminus';
+import { Controller, Get } from '@nestjs/common';
+import { DogHealthIndicator } from './dog.health.js';
+
+@Controller('health')
+export class HealthController {
+  constructor(
+    private health: HealthCheckService,
+    private dogHealthIndicator: DogHealthIndicator
+  ) {}
+
+  @Get()
+  @HealthCheck()
+  healthCheck() {
+    return this.health.check([
+      () => this.dogHealthIndicator.isHealthy('dog'),
+    ])
+  }
+}
+
+```
+
+If the API responds in time, the health check returns the following result:
+
+```json
+{
+  "status": "ok",
+  "info": {
+    "dog": {
+      "status": "up",
+      "breeds": 98,
+      "responseTime": 143
+    }
+  },
+  "error": {},
+  "details": {
+    "dog": {
+      "status": "up",
+      "breeds": 98,
+      "responseTime": 143
+    }
+  }
+}
+
+```
+
+> info **Hint** Terminus executes attempts itself, so you can pass an attempt to `health.check([...])` either directly (`this.dogHealthIndicator.isHealthy('dog')`) or wrapped in a function, as in the example above.
+
+##### Explicit control with up() and down()
+
+Sometimes "healthy" means more than "the operation didn't throw". To decide the state yourself, return `up()` or `down()` directly instead of using `attempt()`. Assume the dogs are now stored locally, and the indicator should only be healthy if every `Dog` has the type `'goodboy'`.
 
 ```typescript
 import { Injectable } from '@nestjs/common';
@@ -347,12 +456,11 @@ export class DogHealthIndicator {
     { name: 'Rex', type: 'badboy' },
   ];
 
-  async isHealthy(key: string){
+  async isHealthy(key: string) {
     const indicator = this.healthIndicatorService.check(key);
     const badboys = this.dogs.filter(dog => dog.type === 'badboy');
-    const isHealthy = badboys.length === 0;
 
-    if (!isHealthy) {
+    if (badboys.length > 0) {
       return indicator.down({ badboys: badboys.length });
     }
 
@@ -362,60 +470,162 @@ export class DogHealthIndicator {
 
 ```
 
-接下来我们需要做的是将健康指标注册为提供者。
+Both `up()` and `down()` accept either an object with additional data, which is appended to the result, or a string, which is added as the `message` property.
+
+##### Degraded state
+
+Not every problem justifies taking the application out of rotation. An unreachable cache, for example, slows the application down but doesn't break it. For such cases, an indicator can return `degraded()`. A degraded indicator doesn't fail the health check: it is listed under `info`, the overall status becomes `'degraded'`, and the HTTP status code stays `200`. Orchestrators keep routing traffic, while the state remains visible in monitoring.
 
 ```typescript
-import { Module } from '@nestjs/common';
-import { TerminusModule } from '@nestjs/terminus';
-import { DogHealthIndicator } from './dog.health';
-
-@Module({
-  controllers: [HealthController],
-  imports: [TerminusModule],
-  providers: [DogHealthIndicator]
-})
-export class HealthModule { }
-
-```
-
-:::info 提示
-在实际应用程序中，`DogHealthIndicator` 应该在单独的模块中提供，例如 `DogModule`，然后由 `HealthModule` 导入。
-:::
-
-最后需要的步骤是在所需的健康检查端点中添加现在可用的健康指标。为此，我们回到 `HealthController` 并将其添加到我们的 `check` 函数中。
-
-```typescript
-import { HealthCheckService, HealthCheck } from '@nestjs/terminus';
-import { Injectable, Get } from '@nestjs/common';
-import { DogHealthIndicator } from './dog.health';
-
 @Injectable()
-export class HealthController {
+export class CacheHealthIndicator {
   constructor(
-    private health: HealthCheckService,
-    private dogHealthIndicator: DogHealthIndicator
+    private readonly healthIndicatorService: HealthIndicatorService,
+    private readonly cache: CacheService,
   ) {}
 
-  @Get()
-  @HealthCheck()
-  healthCheck() {
-    return this.health.check([
-      () => this.dogHealthIndicator.isHealthy('dog'),
-    ])
+  async isHealthy(key: string) {
+    const indicator = this.healthIndicatorService.check(key);
+    const hasCache = await this.cache.isConnected();
+
+    if (!hasCache) {
+      return indicator.degraded('cache unreachable, serving without cache');
+    }
+
+    return indicator.up();
   }
 }
 
 ```
 
-#### 日志记录
+```json
+{
+  "status": "degraded",
+  "info": {
+    "cache": {
+      "status": "degraded",
+      "message": "cache unreachable, serving without cache"
+    }
+  },
+  "error": {},
+  "details": {
+    "cache": {
+      "status": "degraded",
+      "message": "cache unreachable, serving without cache"
+    }
+  }
+}
 
-Terminus 只记录错误消息，例如当健康检查失败时。使用 `TerminusModule.forRoot()` 方法，你可以更多地控制错误的记录方式，以及完全接管日志记录本身。
+```
 
-在本节中，我们将引导你创建自定义日志记录器 `TerminusLogger`。此日志记录器扩展了内置日志记录器。因此，你可以选择要覆盖日志记录器的哪个部分。
+Like `up()` and `down()`, `degraded()` accepts either an object with additional data or a message string. As soon as any indicator is `'down'`, the overall status is `'error'` regardless of degraded indicators.
 
-:::info 信息
-如果你想了解更多关于 NestJS 中自定义日志记录器的信息，[请在此处阅读更多信息](/techniques/logger#injecting-a-custom-logger)。
-:::
+> warning **Warning** A health indicator built with `up()`, `down()`, and `degraded()` reports its state by returning one of them. An error thrown by such an indicator is treated as a bug, not an unhealthy state: it aborts the whole health check and results in a `500` response instead of a `503`. If your indicator wraps an operation that may throw, use `attempt()`, which translates a thrown error into a `'down'` state.
+
+#### Timeouts and caching
+
+Every check built with `attempt()` returns a `HealthCheckAttempt`. This includes your custom indicators as well as the built-in database, microservice, and gRPC indicators. Before the attempt is executed, you can configure it by chaining `withTimeout()` and `cacheFor()`.
+
+##### Timeouts
+
+`withTimeout()` limits the attempt to the given number of milliseconds. Once the time is up, the indicator is marked as `'down'` and the `AbortSignal` passed to your function is aborted. Pass that `signal` to the underlying operation so that it is canceled as well, rather than lingering in the background.
+
+```typescript
+// Within the `HealthController`-class
+@Get()
+@HealthCheck()
+check() {
+  return this.health.check([
+    () => this.db.pingCheck('database').withTimeout(1500),
+    () => this.dogHealthIndicator.isHealthy('dog'),
+  ]);
+}
+
+```
+
+If the dog API from the custom indicator doesn't respond within one second, the health check responds with the following result:
+
+```json
+{
+  "status": "error",
+  "info": {
+    "database": {
+      "status": "up",
+      "responseTime": 12
+    }
+  },
+  "error": {
+    "dog": {
+      "status": "down",
+      "message": "timeout of 1000ms exceeded",
+      "responseTime": 1001
+    }
+  },
+  "details": {
+    "database": {
+      "status": "up",
+      "responseTime": 12
+    },
+    "dog": {
+      "status": "down",
+      "message": "timeout of 1000ms exceeded",
+      "responseTime": 1001
+    }
+  }
+}
+
+```
+
+> warning **Warning** The `timeout` option of the built-in indicators (e.g., `this.db.pingCheck('database', {{ '{' }} timeout: 1500 {{ '}' }})`) is deprecated. Chain `.withTimeout()` on the returned attempt instead.
+
+##### Caching
+
+Orchestrators typically poll health checks every few seconds, and some checks are too expensive to run on every request. `cacheFor()` caches the result of an attempt for the given number of milliseconds. While a fresh result exists, the function isn't executed again, and concurrent health checks share a single in-flight execution. The cache is shared across requests and keyed by the indicator key.
+
+```typescript
+// Within the `HealthController`-class
+@Get()
+@HealthCheck()
+check() {
+  return this.health.check([
+    () => this.db.pingCheck('database').withTimeout(1500).cacheFor(5000),
+  ]);
+}
+
+```
+
+Results served from the cache are marked with `cachedResponse: true`:
+
+```json
+{
+  "status": "ok",
+  "info": {
+    "database": {
+      "status": "up",
+      "responseTime": 12,
+      "cachedResponse": true
+    }
+  },
+  "error": {},
+  "details": {
+    "database": {
+      "status": "up",
+      "responseTime": 12,
+      "cachedResponse": true
+    }
+  }
+}
+
+```
+
+#### Logging
+
+By default, Terminus logs an error when a health check fails. When a graceful shutdown timeout is configured, it also logs the progress of the shutdown. The `TerminusModule.forRoot()` method gives you more control over how errors are logged, and lets you take over logging entirely.
+
+This section walks you through creating a custom logger, `TerminusLogger`. This logger extends the built-in `ConsoleLogger`,
+so you can choose which parts of the logger to override.
+
+> info **Hint** To learn more about custom loggers in Nest, see [injecting a custom logger](/application/logger#injecting-a-custom-logger).
 
 ```typescript
 import { Injectable, Scope, ConsoleLogger } from '@nestjs/common';
@@ -430,13 +640,13 @@ export class TerminusLogger extends ConsoleLogger {
     context?: unknown,
     ...rest: unknown[]
   ): void {
-    // 在这里覆盖错误消息应如何记录
+    // Override how error messages are logged here
   }
 }
 
 ```
 
-创建自定义日志记录器后，你需要做的就是将其传递给 `TerminusModule.forRoot()`。
+Once you have created your custom logger, pass it to `TerminusModule.forRoot()`:
 
 ```typescript
 @Module({
@@ -450,7 +660,7 @@ export class HealthModule {}
 
 ```
 
-要完全禁止来自 Terminus 的任何日志消息，包括错误消息，请按如下方式配置 Terminus。
+To suppress all log messages from Terminus, including error messages, set the `logger` option to `false`:
 
 ```typescript
 @Module({
@@ -464,14 +674,14 @@ export class HealthModule {}
 
 ```
 
-Terminus 允许你配置健康检查错误应如何在日志中显示。
+You can also configure how health check errors are displayed in your logs.
 
-| 错误日志样式          | 描述                                                                                                                        | 示例                                                              |
+| Error Log Style          | Description                                                                                                                        | Example                                                              |
 |:------------------|:-----------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------|
-| `json`  (默认) | 在出错时打印健康检查结果的摘要作为 JSON 对象                                                     | <figure><img src="/assets/Terminus_Error_Log_Json.png" /></figure>   |
-| `pretty`          | 在出错时在格式化框内打印健康检查结果的摘要，并突出显示成功/错误结果 | <figure><img src="/assets/Terminus_Error_Log_Pretty.png" /></figure> |
+| `json`  (default) | Prints a summary of the health check result as a JSON object when a check fails                                                    | <figure><img src="/assets/Terminus_Error_Log_Json.png" /></figure>   |
+| `pretty`          | Prints a summary of the health check result in formatted boxes when a check fails, highlighting successful and failed results      | <figure><img src="/assets/Terminus_Error_Log_Pretty.png" /></figure> |
 
-你可以使用 `errorLogStyle` 配置选项更改日志样式，如下面的代码片段所示。
+To change the log style, use the `errorLogStyle` configuration option:
 
 ```typescript
 @Module({
@@ -485,9 +695,11 @@ export class HealthModule {}
 
 ```
 
-#### 优雅关闭超时
+#### Graceful shutdown timeout
 
-如果你的应用程序需要推迟其关闭过程，Terminus 可以为你处理。此设置在与 Kubernetes 等编排器一起使用时特别有用。通过设置略长于就绪检查间隔的延迟，你可以在关闭容器时实现零停机。
+If your application needs to postpone its shutdown, Terminus can handle it for you with the `gracefulShutdownTimeoutMs` option (in milliseconds, `0` by default).
+This setting is particularly useful with an orchestrator such as Kubernetes.
+By setting a delay slightly longer than the readiness check interval, you can achieve zero downtime when shutting down containers: as soon as a termination signal is received, the health check reports `'shutting_down'` with a `503` status code, so the orchestrator stops routing new traffic while the application finishes in-flight requests during the delay.
 
 ```typescript
 @Module({
@@ -501,6 +713,8 @@ export class HealthModule {}
 
 ```
 
-#### 更多示例
+> warning **Warning** The delay is only applied on `SIGTERM`, which is the signal orchestrators such as Kubernetes send when stopping a container. Other signals (e.g. `SIGINT` from `Ctrl+C`) still switch the health check to `'shutting_down'` but shut the application down immediately. Make sure [shutdown hooks](/fundamentals/lifecycle-events#application-shutdown) are enabled; otherwise, Terminus never receives the signal.
 
-更多可工作的示例可在[这里](https://github.com/nestjs/terminus/tree/master/sample)找到。
+#### More examples
+
+More working examples are available in the [Terminus samples directory](https://github.com/nestjs/terminus/tree/master/sample).
