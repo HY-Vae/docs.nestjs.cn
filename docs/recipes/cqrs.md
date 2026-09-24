@@ -1,35 +1,35 @@
 <!-- 此文件从 content/recipes/cqrs.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-03-12T13:42:20.321Z -->
+<!-- 生成时间: 2026-09-24T07:16:08.322Z -->
 <!-- 源文件: content/recipes/cqrs.md -->
 
 ### CQRS
 
-简单 [CRUD](https://en.wikipedia.org/wiki/Create,_read,_update_and_delete)（创建、读取、更新和删除）应用程序的流程可以描述如下：
+The flow of simple [CRUD](https://en.wikipedia.org/wiki/Create,_read,_update_and_delete) (Create, Read, Update and Delete) applications can be described as follows:
 
-1. 控制器层处理 HTTP 请求并将任务委托给服务层。
-2. 服务层是大部分业务逻辑所在的地方。
-3. 服务使用存储库/DAO 来更改/持久化实体。
-4. 实体充当值的容器，具有 setter 和 getter。
+1. The controllers layer handles HTTP requests and delegates tasks to the services layer.
+2. The services layer is where most of the business logic lives.
+3. Services use repositories or DAOs to change and persist entities.
+4. Entities act as containers for values, with setters and getters.
 
-虽然这种模式通常对于中小型应用程序来说已经足够，但对于更大、更复杂的应用程序来说可能不是最佳选择。在这种情况下，**CQRS**（命令查询职责分离）模型可能更合适且更具可扩展性（取决于应用程序的需求）。此模型的好处包括：
+While this pattern is usually sufficient for small and medium-sized applications, it may not be the best choice for larger, more complex ones. In such cases, the **CQRS** (Command and Query Responsibility Segregation) model may be more appropriate and scalable, depending on the application's requirements. Benefits of this model include:
 
-- **关注点分离**。该模型将读取和写入操作分离到不同的模型中。
-- **可扩展性**。读取和写入操作可以独立扩展。
-- **灵活性**。该模型允许为读取和写入操作使用不同的数据存储。
-- **性能**。该模型允许为读取和写入操作使用优化的不同数据存储。
+- **Separation of concerns**. Read and write operations are handled by separate models.
+- **Scalability**. Read and write operations can be scaled independently.
+- **Flexibility**. Reads and writes can use different data stores.
+- **Performance**. Each data store can be optimized for its workload (reads or writes).
 
-为了促进该模型，Nest 提供了一个轻量级的 [CQRS 模块](https://github.com/nestjs/cqrs)。本章介绍如何使用它。
+To support this model, Nest provides a lightweight [CQRS module](https://github.com/nestjs/cqrs). This chapter describes how to use it.
 
-#### 安装
+#### Installation
 
-首先安装所需的包：
+First, install the required package:
 
 ```bash
 $ npm install --save @nestjs/cqrs
 
 ```
 
-安装完成后，导航到应用程序的根模块（通常是 `AppModule`），并导入 `CqrsModule.forRoot()`：
+Once the installation is complete, open the root module of your application (usually `AppModule`) and import `CqrsModule.forRoot()`:
 
 ```typescript
 import { Module } from '@nestjs/common';
@@ -42,20 +42,20 @@ export class AppModule {}
 
 ```
 
-此模块接受一个可选的配置对象。以下选项可用：
+`forRoot()` accepts an optional configuration object. To provide the options asynchronously (e.g., from a configuration service), use `CqrsModule.forRootAsync()` instead. The following options are available:
 
-| 属性                           | 描述                                                                                         | 默认值                            |
-| ----------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------- |
-| `commandPublisher`            | 负责将命令分派到系统的发布者。                                                                 | `DefaultCommandPubSub`            |
-| `eventPublisher`              | 用于发布事件的发布者，允许它们被广播或处理。                                                   | `DefaultPubSub`                   |
-| `queryPublisher`              | 用于发布查询的发布者，可以触发数据检索操作。                                                   | `DefaultQueryPubSub`              |
-| `unhandledExceptionPublisher` | 负责处理未处理异常的发布者，确保它们被跟踪和报告。                                              | `DefaultUnhandledExceptionPubSub` |
-| `eventIdProvider`             | 通过生成或从事件实例检索来提供唯一事件 ID 的服务。                                              | `DefaultEventIdProvider`          |
-| `rethrowUnhandled`            | 确定未处理的异常是否应在处理后重新抛出，对调试和错误管理很有用。                                 | `false`                           |
+| Attribute                     | Description                                                                                                                  | Default                           |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| `commandPublisher`            | The publisher responsible for dispatching commands to the system.                                                            | `DefaultCommandPubSub`            |
+| `eventPublisher`              | The publisher used to publish events, allowing them to be broadcasted or processed.                                          | `DefaultPubSub`                   |
+| `queryPublisher`              | The publisher used for publishing queries, which can trigger data retrieval operations.                                      | `DefaultQueryPubSub`              |
+| `unhandledExceptionPublisher` | The publisher used to publish unhandled exceptions to the `UnhandledExceptionBus`.                                           | `DefaultUnhandledExceptionPubSub` |
+| `eventIdProvider`             | Service that retrieves unique event IDs from event instances.                                                                | `DefaultEventIdProvider`          |
+| `rethrowUnhandled`            | Whether exceptions thrown by event handlers and sagas are rethrown instead of being published to the `UnhandledExceptionBus`. | `false`                           |
 
-#### 命令
+#### Commands
 
-命令用于更改应用程序状态。它们应该是基于任务的，而不是以数据为中心的。当分派命令时，它由相应的**命令处理程序**处理。处理程序负责更新应用程序状态。
+Commands change the application state. They should be task-based rather than data-centric. When a command is dispatched, it is handled by a corresponding **command handler**, which is responsible for updating the application state.
 
 ```typescript
 @Injectable()
@@ -69,20 +69,13 @@ export class HeroesGameService {
   }
 }
 
-  async killDragon(heroId, killDragonDto) {
-    return this.commandBus.execute(
-      new KillDragonCommand(heroId, killDragonDto.dragonId)
-    );
-  }
-}
-
 ```
 
-在上面的代码片段中，我们实例化 `KillDragonCommand` 类并将其传递给 `CommandBus` 的 `execute()` 方法。这是演示的命令类：
+The code above instantiates the `KillDragonCommand` class and passes it to the `execute()` method of the `CommandBus`. Here is the command class:
 
 ```typescript
 export class KillDragonCommand extends Command<{
-  actionId: string // 此类型表示命令执行结果
+  actionId: string // This type represents the command execution result
 }> {
   constructor(
     public readonly heroId: string,
@@ -94,15 +87,13 @@ export class KillDragonCommand extends Command<{
 
 ```
 
-如你所见，`KillDragonCommand` 类扩展了 `Command` 类。`Command` 类是从 `@nestjs/cqrs` 包导出的简单实用类，允许你定义命令的返回类型。在这种情况下，返回类型是具有 `actionId` 属性的对象。现在，每当分派 `KillDragonCommand` 命令时，`CommandBus#execute()` 方法的返回类型将被推断为 `Promise<{{ '{' }} actionId: string {{ '}' }}>`。当你想从命令处理程序返回一些数据时，这很有用。
+The `KillDragonCommand` class extends the `Command` class, a utility class exported from the `@nestjs/cqrs` package that lets you define the command's return type. In this case, the return type is an object with an `actionId` property. Whenever the `KillDragonCommand` command is dispatched, the return type of the `CommandBus#execute()` method is inferred as `Promise<{{ '{' }} actionId: string {{ '}' }}>`. This is useful when the command handler returns data to the caller.
 
-:::info 提示
-从 `Command` 类继承是可选的。只有在你想要定义命令的返回类型时才需要。
-:::
+> info **Hint** Extending the `Command` class is optional. You only need it to define the command's return type.
 
-`CommandBus` 表示命令的**流**。它负责将命令分派到适当的处理程序。`execute()` 方法返回一个 promise，该 promise 解析为处理程序返回的值。
+The `CommandBus` represents a **stream** of commands. It dispatches commands to the appropriate handlers. The `execute()` method returns a promise that resolves to the value returned by the handler.
 
-让我们为 `KillDragonCommand` 命令创建一个处理程序。
+Let's create a handler for the `KillDragonCommand` command.
 
 ```typescript
 @CommandHandler(KillDragonCommand)
@@ -116,56 +107,44 @@ export class KillDragonHandler implements ICommandHandler<KillDragonCommand> {
     hero.killEnemy(dragonId);
     await this.repository.persist(hero);
 
-    // "ICommandHandler<KillDragonCommand>" 强制你返回与命令返回类型匹配的值
+    // "ICommandHandler<KillDragonCommand>" forces you to return a value that matches the command's return type
     return {
-      actionId: crypto.randomUUID(), // 此值将返回给调用者
-    }
-  }
-}
-
-  async execute(command) {
-    const { heroId, dragonId } = command;
-    const hero = this.repository.findOneById(+heroId);
-
-    hero.killEnemy(dragonId);
-    await this.repository.persist(hero);
-
-    // "ICommandHandler<KillDragonCommand>" 强制你返回与命令返回类型匹配的值
-    return {
-      actionId: crypto.randomUUID(), // 此值将返回给调用者
+      actionId: crypto.randomUUID(), // This value will be returned to the caller
     }
   }
 }
 
 ```
 
-此处理程序从存储库检索 `Hero` 实体，调用 `killEnemy()` 方法，然后持久化更改。`KillDragonHandler` 类实现 `ICommandHandler` 接口，该接口需要实现 `execute()` 方法。`execute()` 方法接收命令对象作为参数。
+This handler retrieves the `Hero` entity from the repository, calls its `killEnemy()` method, and then persists the changes. The `KillDragonHandler` class implements the `ICommandHandler` interface, which requires an `execute()` method. The `execute()` method receives the command object as an argument.
 
-请注意，`ICommandHandler<KillDragonCommand>` 强制你返回与命令返回类型匹配的值。在这种情况下，返回类型是具有 `actionId` 属性的对象。这仅适用于从 `Command` 类继承的命令。否则，你可以返回任何你想要的内容。
+`ICommandHandler<KillDragonCommand>` requires `execute()` to return a value that matches the command's return type (here, an object with an `actionId` property). This only applies to commands that extend the `Command` class. For other commands, the return type isn't constrained.
 
-最后，确保在模块中将 `KillDragonHandler` 注册为提供者：
+Finally, register the `KillDragonHandler` as a provider in a module:
 
 ```typescript
 providers: [KillDragonHandler];
 
 ```
 
-#### 查询
+#### Queries
 
-查询用于从应用程序状态检索数据。它们应该是以数据为中心的，而不是基于任务的。当分派查询时，它由相应的**查询处理程序**处理。处理程序负责检索数据。
+Queries retrieve data from the application state. They should be data-centric rather than task-based. When a query is dispatched, it is handled by a corresponding **query handler**, which is responsible for retrieving the data.
 
-`QueryBus` 遵循与 `CommandBus` 相同的模式。查询处理程序应该实现 `IQueryHandler` 接口并使用 `@QueryHandler()` 装饰器进行注释。请参阅以下示例：
+The `QueryBus` follows the same pattern as the `CommandBus`. Query handlers implement the `IQueryHandler` interface and are annotated with the `@QueryHandler()` decorator. Start with the query class:
 
 ```typescript
 export class GetHeroQuery extends Query<Hero> {
-  constructor(public readonly heroId: string) {}
+  constructor(public readonly heroId: string) {
+    super();
+  }
 }
 
 ```
 
-与 `Command` 类类似，`Query` 类是从 `@nestjs/cqrs` 包导出的简单实用类，允许你定义查询的返回类型。在这种情况下，返回类型是 `Hero` 对象。现在，每当分派 `GetHeroQuery` 查询时，`QueryBus#execute()` 方法的返回类型将被推断为 `Promise<Hero>`。
+Like the `Command` class, the `Query` class is a utility class exported from the `@nestjs/cqrs` package that lets you define the query's return type. In this case, the return type is a `Hero` object. Whenever the `GetHeroQuery` query is dispatched, the return type of the `QueryBus#execute()` method is inferred as `Promise<Hero>`.
 
-要检索英雄，我们需要创建一个查询处理程序：
+To retrieve the hero, create a query handler:
 
 ```typescript
 @QueryHandler(GetHeroQuery)
@@ -177,34 +156,29 @@ export class GetHeroHandler implements IQueryHandler<GetHeroQuery> {
   }
 }
 
-  async execute(query) {
-    return this.repository.findOneById(query.hero);
-  }
-}
-
 ```
 
-`GetHeroHandler` 类实现 `IQueryHandler` 接口，该接口需要实现 `execute()` 方法。`execute()` 方法接收查询对象作为参数，并且必须返回与查询返回类型匹配的数据（在这种情况下是 `Hero` 对象）。
+The `GetHeroHandler` class implements the `IQueryHandler` interface, which requires an `execute()` method. The `execute()` method receives the query object as an argument and must return data that matches the query's return type (in this case, a `Hero` object).
 
-最后，确保在模块中将 `GetHeroHandler` 注册为提供者：
+Finally, register the `GetHeroHandler` as a provider in a module:
 
 ```typescript
 providers: [GetHeroHandler];
 
 ```
 
-现在，要分派查询，请使用 `QueryBus`：
+To dispatch the query, use the `QueryBus`:
 
 ```typescript
-const hero = await this.queryBus.execute(new GetHeroQuery(heroId)); // "hero" 将自动推断为 "Hero" 类型
+const hero = await this.queryBus.execute(new GetHeroQuery(heroId)); // "hero" will be auto-inferred as "Hero" type
 
 ```
 
-#### 事件
+#### Events
 
-事件用于通知应用程序的其他部分关于应用程序状态的更改。它们由**模型**分派或直接使用 `EventBus` 分派。当分派事件时，它由相应的**事件处理程序**处理。处理程序可以例如更新读取模型。
+Events notify other parts of the application about changes in the application state. They are dispatched by **models** or directly through the `EventBus`. When an event is dispatched, it is handled by the corresponding **event handlers**, which can, for example, update the read model.
 
-出于演示目的，让我们创建一个事件类：
+For demonstration purposes, let's create an event class:
 
 ```typescript
 export class HeroKilledDragonEvent {
@@ -216,7 +190,7 @@ export class HeroKilledDragonEvent {
 
 ```
 
-虽然可以使用 `EventBus.publish()` 方法直接分派事件，但我们也可以从模型中分派它们。让我们更新 `Hero` 模型，以便在调用 `killEnemy()` 方法时分派 `HeroKilledDragonEvent` 事件。
+While you can dispatch events directly with the `EventBus.publish()` method, you can also dispatch them from the model. Let's update the `Hero` model to dispatch the `HeroKilledDragonEvent` event when the `killEnemy()` method is called.
 
 ```typescript
 export class Hero extends AggregateRoot {
@@ -225,20 +199,14 @@ export class Hero extends AggregateRoot {
   }
 
   killEnemy(enemyId: string) {
-    // 业务逻辑
-    this.apply(new HeroKilledDragonEvent(this.id, enemyId));
-  }
-}
-
-  killEnemy(enemyId) {
-    // 业务逻辑
+    // Business logic
     this.apply(new HeroKilledDragonEvent(this.id, enemyId));
   }
 }
 
 ```
 
-`apply()` 方法用于分派事件。它接受一个事件对象作为参数。但是，由于我们的模型不知道 `EventBus`，我们需要将其与模型关联。我们可以使用 `EventPublisher` 类来实现这一点。
+The `apply()` method dispatches events. It accepts an event object as an argument. However, the model isn't aware of the `EventBus`, so you need to connect the two. The `EventPublisher` class does that:
 
 ```typescript
 @CommandHandler(KillDragonCommand)
@@ -255,24 +223,18 @@ export class KillDragonHandler implements ICommandHandler<KillDragonCommand> {
     );
     hero.killEnemy(dragonId);
     hero.commit();
-  }
-}
 
-  async execute(command) {
-    const { heroId, dragonId } = command;
-    const hero = this.publisher.mergeObjectContext(
-      await this.repository.findOneById(+heroId),
-    );
-    hero.killEnemy(dragonId);
-    hero.commit();
+    return {
+      actionId: crypto.randomUUID(),
+    };
   }
 }
 
 ```
 
-`EventPublisher#mergeObjectContext` 方法将事件发布者合并到提供的对象中，这意味着该对象现在将能够向事件流发布事件。
+The `EventPublisher#mergeObjectContext` method merges the event publisher into the provided object. This object must implement the `IAggregateRoot` interface (or extend the `AggregateRoot` class). Once merged, the object can publish events to the event stream.
 
-请注意，在这个例子中，我们还调用了模型上的 `commit()` 方法。此方法用于分派任何未完成的事件。要自动分派事件，我们可以将 `autoCommit` 属性设置为 `true`：
+Events applied with `apply()` are queued until you call the model's `commit()` method, which dispatches all outstanding events. To dispatch events as soon as they are applied, set the `autoCommit` property to `true`:
 
 ```typescript
 export class Hero extends AggregateRoot {
@@ -284,28 +246,116 @@ export class Hero extends AggregateRoot {
 
 ```
 
-如果我们想将事件发布者合并到非现有对象中，而是合并到类中，我们可以使用 `EventPublisher#mergeClassContext` 方法：
+To merge the event publisher into a class rather than into an existing object, use the `EventPublisher#mergeClassContext` method:
 
 ```typescript
 const HeroModel = this.publisher.mergeClassContext(Hero);
-const hero = new HeroModel('id'); // <-- HeroModel 是一个类
+const hero = new HeroModel('id'); // <-- HeroModel is a class
 
 ```
 
-现在，`HeroModel` 类的每个实例都将能够发布事件，而无需使用 `mergeObjectContext()` 方法。
+Every instance of the `HeroModel` class can now publish events without calling the `mergeObjectContext()` method.
 
-此外，我们可以使用 `EventBus` 手动发出事件：
+#### Flexible Aggregate Roots
+
+The `AggregateRoot` class is a base class that you can extend to add event-driven capabilities to your domain models. However, this approach requires domain entities to extend `AggregateRoot` directly, which can be a limitation if your application already has an established entity inheritance hierarchy (e.g., a base `Entity` class or domain-specific base classes such as `Monster` or `Vehicle`).
+
+For more flexibility, the `@nestjs/cqrs` package supports three approaches to implementing aggregate roots:
+
+**Approach 1: Traditional (Class Inheritance)**
+
+This is the standard approach shown in the previous examples. It works well for simple scenarios and greenfield projects.
 
 ```typescript
-this.eventBus.publish(new HeroKilledDragonEvent());
+export class Hero extends AggregateRoot {
+  constructor(private id: string) {
+    super();
+  }
+
+  killEnemy(enemyId: string) {
+    this.apply(new HeroKilledDragonEvent(this.id, enemyId));
+  }
+}
 
 ```
 
-:::info 提示
-`EventBus` 是一个可注入的类。
-:::
+**Approach 2: Mixin (For existing hierarchies)**
 
-每个事件可以有多个**事件处理程序**。
+If you already have a base class and can't extend `AggregateRoot` directly, use the `WithAggregateRoot<EventBase, TBase>()` mixin function. It applies aggregate root behavior to any existing base class.
+
+```typescript
+abstract class Monster {
+  constructor(protected readonly id: string) {}
+  abstract roar(): void;
+}
+
+export class Dragon extends WithAggregateRoot(Monster) {
+  roar(): void {
+    console.log('Roarrrr!');
+  }
+
+  die(): void {
+    this.roar();
+    this.apply(new DragonDiedEvent(this.id)); // Provided by the mixin
+  }
+}
+
+```
+
+**Approach 3: Custom Implementation**
+
+For maximum control, or to keep your domain layer completely framework-agnostic, implement the `IAggregateRoot` interface directly:
+
+```typescript
+export class CustomEntity implements IAggregateRoot {
+  autoCommit = false;
+  private events: IEvent[] = [];
+
+  getUncommittedEvents() {
+    return this.events;
+  }
+
+  publish(event: IEvent) {
+    // custom logic
+  }
+
+  publishAll(events: IEvent[]) {
+    // custom logic
+  }
+
+  commit() {
+    // custom logic
+  }
+
+  uncommit() {
+    // custom logic
+  }
+
+  apply(event: IEvent) {
+    this.events.push(event);
+  }
+
+  loadFromHistory(history: IEvent[]) {
+    // custom logic
+  }
+}
+
+```
+
+All three approaches work with `EventPublisher`, which accepts any object that implements the `IAggregateRoot` interface.
+
+#### Manual event publishing
+
+To publish an event without going through a model, call the `EventBus#publish()` method directly:
+
+```typescript
+this.eventBus.publish(new HeroKilledDragonEvent(heroId, dragonId));
+
+```
+
+> info **Hint** The `EventBus` is an injectable class.
+
+Each event can have multiple **event handlers**.
 
 ```typescript
 @EventsHandler(HeroKilledDragonEvent)
@@ -313,22 +363,20 @@ export class HeroKilledDragonHandler implements IEventHandler<HeroKilledDragonEv
   constructor(private repository: HeroesRepository) {}
 
   handle(event: HeroKilledDragonEvent) {
-    // 业务逻辑
+    // Business logic
   }
 }
 
 ```
 
-:::info 提示
-请注意，当你开始使用事件处理程序时，你将脱离传统的 HTTP Web 上下文。
-:::
+> info **Hint** Event handlers run outside the traditional HTTP request context:
 >
-> - `CommandHandlers` 中的错误仍然可以被内置的[异常过滤器](/overview/exception-filters)捕获。
-> - `EventHandlers` 中的错误无法被异常过滤器捕获：你必须手动处理它们。可以通过简单的 `try/catch`，使用 [Sagas](/recipes/cqrs#sagas) 触发补偿事件，或你选择的任何其他解决方案。
-> - `CommandHandlers` 中的 HTTP 响应仍然可以发送回客户端。
-> - `EventHandlers` 中的 HTTP 响应无法发送。如果你想向客户端发送信息，可以使用 [WebSocket](/websockets/gateways)、[SSE](/techniques/server-sent-events) 或你选择的任何其他解决方案。
+> - Errors thrown in command handlers can still be caught by the built-in [exception filters](/exception-filters).
+> - Errors thrown in event handlers can't be caught by exception filters, so you have to handle them yourself: with a `try/catch` block, with a [saga](/recipes/cqrs#sagas) that triggers a compensating event, or with another approach of your choice.
+> - The value returned by a command handler can still be sent back to the client in the HTTP response.
+> - Event handlers can't send HTTP responses. To send information to the client, use [WebSockets](/websockets/gateways), [server-sent events](/http/server-sent-events), or another mechanism.
 
-与命令和查询一样，确保在模块中将 `HeroKilledDragonHandler` 注册为提供者：
+As with commands and queries, register the `HeroKilledDragonHandler` as a provider in a module:
 
 ```typescript
 providers: [HeroKilledDragonHandler];
@@ -337,11 +385,11 @@ providers: [HeroKilledDragonHandler];
 
 #### Sagas
 
-Saga 是一个长期运行的过程，它监听事件并可能触发新命令。它通常用于管理应用程序中的复杂工作流。例如，当用户注册时，saga 可能会监听 `UserRegisteredEvent` 并向用户发送欢迎电子邮件。
+A saga is a long-running process that listens to events and may trigger new commands. Sagas are typically used to manage complex workflows. For example, when a user signs up, a saga may listen to the `UserRegisteredEvent` and send the user a welcome email.
 
-Sagas 是一个非常强大的功能。单个 saga 可以监听 1..* 个事件。使用 [RxJS](https://github.com/ReactiveX/rxjs) 库，我们可以过滤、映射、分叉和合并事件流以创建复杂的工作流。每个 saga 返回一个 Observable，它产生一个命令实例。然后，该命令由 `CommandBus` **异步**分派。
+A single saga may listen for 1..\* events. With the [RxJS](https://github.com/ReactiveX/rxjs) library, you can filter, map, fork, and merge event streams to build sophisticated workflows. Each saga returns an `Observable` that emits command instances. Each emitted command is then dispatched **asynchronously** by the `CommandBus`.
 
-让我们创建一个 saga，它监听 `HeroKilledDragonEvent` 并分派 `DropAncientItemCommand` 命令。
+Let's create a saga that listens to the `HeroKilledDragonEvent` and dispatches the `DropAncientItemCommand` command.
 
 ```typescript
 @Injectable()
@@ -357,24 +405,22 @@ export class HeroesGameSagas {
 
 ```
 
-:::info 提示
-`ofType` 操作符和 `@Saga()` 装饰器从 `@nestjs/cqrs` 包导出。
-:::
+> info **Hint** The `ofType` operator and the `@Saga()` decorator are exported from the `@nestjs/cqrs` package.
 
-`@Saga()` 装饰器将方法标记为 saga。`events$` 参数是所有事件的 Observable 流。`ofType` 操作符按指定的事件类型过滤流。`map` 操作符将事件映射到新的命令实例。
+The `@Saga()` decorator marks the property as a saga. The `events$` argument is an `Observable` stream of all events. The `ofType` operator filters the stream by the specified event type, and the `map` operator maps each event to a new command instance.
 
-在这个例子中，我们将 `HeroKilledDragonEvent` 映射到 `DropAncientItemCommand` 命令。然后，`DropAncientItemCommand` 命令由 `CommandBus` 自动分派。
+In this example, each `HeroKilledDragonEvent` is mapped to a `DropAncientItemCommand` command, which the `CommandBus` then dispatches automatically.
 
-与查询、命令和事件处理程序一样，确保在模块中将 `HeroesGameSagas` 注册为提供者：
+As with query, command, and event handlers, register the `HeroesGameSagas` as a provider in a module:
 
 ```typescript
 providers: [HeroesGameSagas];
 
 ```
 
-#### 未处理的异常
+#### Unhandled exceptions
 
-事件处理程序异步执行，因此它们必须始终正确处理异常，以防止应用程序进入不一致状态。如果未处理异常，`EventBus` 将创建一个 `UnhandledExceptionInfo` 对象并将其推送到 `UnhandledExceptionBus` 流。此流是一个 `Observable`，可用于处理未处理的异常。
+Event handlers are executed asynchronously, so they must always handle exceptions properly to prevent the application from entering an inconsistent state. If an exception isn't handled, the `EventBus` logs it, creates an `UnhandledExceptionInfo` object, and pushes it to the `UnhandledExceptionBus` stream. The same applies to exceptions thrown by sagas and by command handlers executing commands that sagas dispatched. The `UnhandledExceptionBus` is an `Observable` that you can subscribe to in order to process unhandled exceptions. If the `rethrowUnhandled` option is set to `true`, these exceptions are rethrown instead of being published to the `UnhandledExceptionBus`.
 
 ```typescript
 private destroy$ = new Subject<void>();
@@ -383,8 +429,8 @@ constructor(private unhandledExceptionsBus: UnhandledExceptionBus) {
   this.unhandledExceptionsBus
     .pipe(takeUntil(this.destroy$))
     .subscribe((exceptionInfo) => {
-      // 在这里处理异常
-      // 例如，将其发送到外部服务、终止进程或发布新事件
+      // Handle exception here
+      // e.g. send it to external service, terminate process, or publish a new event
     });
 }
 
@@ -395,7 +441,7 @@ onModuleDestroy() {
 
 ```
 
-要过滤掉异常，我们可以使用 `ofType` 操作符，如下所示：
+To handle only specific exception types, use the `UnhandledExceptionBus.ofType()` operator, which filters exceptions with `instanceof`:
 
 ```typescript
 this.unhandledExceptionsBus
@@ -404,14 +450,14 @@ this.unhandledExceptionsBus
     UnhandledExceptionBus.ofType(TransactionNotAllowedException),
   )
   .subscribe((exceptionInfo) => {
-    // 在这里处理异常
+    // Handle exception here
   });
 
 ```
 
-其中 `TransactionNotAllowedException` 是我们要过滤掉的异常。
+Here, only exceptions that are instances of `TransactionNotAllowedException` reach the subscriber.
 
-`UnhandledExceptionInfo` 对象包含以下属性：
+The `UnhandledExceptionInfo` object contains the following properties:
 
 ```typescript
 export interface UnhandledExceptionInfo<
@@ -419,20 +465,20 @@ export interface UnhandledExceptionInfo<
   Exception = any,
 > {
   /**
-   * 抛出的异常。
+   * The exception that was thrown.
    */
   exception: Exception;
   /**
-   * 异常的原因（事件或命令引用）。
+   * The cause of the exception (event or command reference).
    */
   cause: Cause;
 }
 
 ```
 
-#### 订阅所有事件
+#### Subscribing to all events
 
-`CommandBus`、`QueryBus` 和 `EventBus` 都是 **Observables**。这意味着我们可以订阅整个流，例如，处理所有事件。例如，我们可以将所有事件记录到控制台，或将它们保存到事件存储。
+`CommandBus`, `QueryBus`, and `EventBus` are all **Observables**. This means you can subscribe to the entire stream and, for example, process all events: log them to the console or save them to an event store.
 
 ```typescript
 private destroy$ = new Subject<void>();
@@ -441,7 +487,7 @@ constructor(private eventBus: EventBus) {
   this.eventBus
     .pipe(takeUntil(this.destroy$))
     .subscribe((event) => {
-      // 将事件保存到数据库
+      // Save events to database
     });
 }
 
@@ -452,32 +498,32 @@ onModuleDestroy() {
 
 ```
 
-#### 请求作用域
+#### Request-scoping
 
-对于来自不同编程语言背景的人来说，可能会惊讶地发现，在 Nest 中，大多数东西都在传入请求之间共享。这包括到数据库的连接池、具有全局状态的单例服务等。请记住，Node.js 不遵循请求/响应多线程无状态模型，其中每个请求由单独的线程处理。因此，使用单例实例对我们的应用程序来说是**安全**的。
+If you're coming from other programming languages, you may be surprised that in Nest, most things are shared across incoming requests: a connection pool to the database, singleton services with global state, and more. Node.js doesn't follow the request/response multi-threaded stateless model, in which each request is processed by a separate thread. As a result, using singleton instances is **safe** for your applications.
 
-但是，在某些边缘情况下，可能需要基于请求的处理程序生命周期。这可能包括 GraphQL 应用程序中的每请求缓存、请求跟踪或多租户等场景。你可以在[这里](/fundamentals/provider-scopes)了解更多关于如何控制作用域的信息。
+However, there are edge cases where a request-based lifetime for a handler is desirable, such as per-request caching in GraphQL applications, request tracking, or multi-tenancy. See the [injection scopes](/fundamentals/injection-scopes) chapter to learn how to control scopes.
 
-将请求作用域的提供者与 CQRS 一起使用可能很复杂，因为 `CommandBus`、`QueryBus` 和 `EventBus` 都是单例。幸运的是，`@nestjs/cqrs` 包通过为每个处理的命令、查询或事件自动创建请求作用域处理程序的新实例来简化这一点。
+Using request-scoped providers alongside CQRS can be complex because the `CommandBus`, `QueryBus`, and `EventBus` are singletons. The `@nestjs/cqrs` package handles this by automatically creating a new instance of a request-scoped handler for each processed command, query, or event.
 
-要使处理程序成为请求作用域，你可以：
+To make a handler request-scoped, either:
 
-1. 依赖请求作用域的提供者。
-2. 使用 `@CommandHandler`、`@QueryHandler` 或 `@EventsHandler` 装饰器显式将其作用域设置为 `REQUEST`，如下所示：
+1. Depend on a request-scoped provider.
+2. Explicitly set its scope to `REQUEST` in the `@CommandHandler()`, `@QueryHandler()`, or `@EventsHandler()` decorator, as shown:
 
 ```typescript
 @CommandHandler(KillDragonCommand, {
   scope: Scope.REQUEST,
 })
 export class KillDragonHandler {
-  // 实现在这里
+  // Implementation here
 }
 
 ```
 
-要将请求负载注入任何请求作用域的提供者，请使用 `@Inject(REQUEST)` 装饰器。但是，CQRS 中请求负载的性质取决于上下文——它可能是 HTTP 请求、计划作业或任何其他触发命令的操作。
+To inject the request payload into a request-scoped provider, use the `@Inject(REQUEST)` decorator (`REQUEST` is exported from `@nestjs/core`). In CQRS, however, the request payload depends on the context: it could be an HTTP request, a scheduled job, or any other operation that triggers a command.
 
-负载必须是扩展 `AsyncContext`（由 `@nestjs/cqrs` 提供）的类的实例，它充当请求上下文并保存在整个请求生命周期中可访问的数据。
+The payload must be an instance of `AsyncContext` (exported from `@nestjs/cqrs`) or of a class that extends it. It acts as the request context and holds data that is accessible throughout the request lifecycle.
 
 ```typescript
 import { AsyncContext } from '@nestjs/cqrs';
@@ -490,7 +536,7 @@ export class MyRequest extends AsyncContext {
 
 ```
 
-执行命令时，将自定义请求上下文作为第二个参数传递给 `CommandBus#execute` 方法：
+When executing a command, pass the custom request context as the second argument to the `CommandBus#execute()` method:
 
 ```typescript
 const myRequest = new MyRequest(user);
@@ -501,7 +547,7 @@ await this.commandBus.execute(
 
 ```
 
-这使得 `MyRequest` 实例作为 `REQUEST` 提供者可用于相应的处理程序：
+This makes the `MyRequest` instance available as the `REQUEST` provider to the corresponding handler:
 
 ```typescript
 @CommandHandler(KillDragonCommand, {
@@ -509,15 +555,15 @@ await this.commandBus.execute(
 })
 export class KillDragonHandler {
   constructor(
-    @Inject(REQUEST) private request: MyRequest, // 注入请求上下文
+    @Inject(REQUEST) private request: MyRequest, // Inject the request context
   ) {}
 
-  // 处理程序实现在这里
+  // Handler implementation here
 }
 
 ```
 
-你可以对查询遵循相同的方法：
+Queries work the same way:
 
 ```typescript
 const myRequest = new MyRequest(user);
@@ -525,7 +571,7 @@ const hero = await this.queryBus.execute(new GetHeroQuery(heroId), myRequest);
 
 ```
 
-在查询处理程序中：
+And in the query handler:
 
 ```typescript
 @QueryHandler(GetHeroQuery, {
@@ -533,27 +579,27 @@ const hero = await this.queryBus.execute(new GetHeroQuery(heroId), myRequest);
 })
 export class GetHeroHandler {
   constructor(
-    @Inject(REQUEST) private request: MyRequest, // 注入请求上下文
+    @Inject(REQUEST) private request: MyRequest, // Inject the request context
   ) {}
 
-  // 处理程序实现在这里
+  // Handler implementation here
 }
 
 ```
 
-对于事件，虽然你可以将请求提供者传递给 `EventBus#publish`但这不太常见。相反，使用 `EventPublisher` 将请求提供者合并到模型中：
+For events, you can pass the request context to `EventBus#publish()`, but this is less common. Instead, use `EventPublisher` to merge the request context into a model:
 
 ```typescript
 const hero = this.publisher.mergeObjectContext(
   await this.repository.findOneById(+heroId),
-  this.request, // 在这里注入请求上下文
+  this.request, // Inject the request context here
 );
 
 ```
 
-订阅这些事件的请求作用域事件处理程序将能够访问请求提供者。
+Request-scoped event handlers that handle these events have access to the request context.
 
-Sagas 始终是单例实例，因为它们管理长期运行的过程。但是，你可以从事件对象中检索请求提供者：
+Sagas are always singletons because they manage long-running processes (registering a saga in a non-singleton provider throws an exception). However, you can retrieve the request context from event objects:
 
 ```typescript
 @Saga()
@@ -561,10 +607,10 @@ dragonKilled = (events$: Observable<any>): Observable<ICommand> => {
   return events$.pipe(
     ofType(HeroKilledDragonEvent),
     map((event) => {
-      const request = AsyncContext.of(event); // 检索请求上下文
+      const request = AsyncContext.of(event); // Retrieve the request context
       const command = new DropAncientItemCommand(event.heroId, fakeItemID);
 
-      AsyncContext.merge(request, command); // 将请求上下文合并到命令中
+      AsyncContext.merge(request, command); // Merge the request context into the command
       return command;
     }),
   );
@@ -572,8 +618,8 @@ dragonKilled = (events$: Observable<any>): Observable<ICommand> => {
 
 ```
 
-或者，使用 `request.attachTo(command)` 方法将请求上下文绑定到命令。
+Alternatively, call the `request.attachTo(command)` method to attach the request context to the command.
 
-#### 示例
+#### Example
 
-一个可用的示例可在[这里](https://github.com/kamilmysliwiec/nest-cqrs-example)找到。
+A working example is available in the [nest-cqrs-example repository](https://github.com/kamilmysliwiec/nest-cqrs-example).

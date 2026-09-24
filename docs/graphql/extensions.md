@@ -1,14 +1,16 @@
-### 扩展功能
+<!-- 此文件从 content/graphql/extensions.md 自动生成，请勿直接修改此文件 -->
+<!-- 生成时间: 2026-09-24T07:16:08.338Z -->
+<!-- 源文件: content/graphql/extensions.md -->
 
-:::warning 警告
-本章仅适用于代码优先方法。
-:::
+### Extensions
 
-扩展是一项**高级底层特性** ，允许您在类型配置中定义任意数据。通过为特定字段附加自定义元数据，您可以创建更复杂、通用的解决方案。例如，借助扩展功能，您可以定义访问特定字段所需的字段级角色。这些角色可在运行时反映，以确定调用者是否具备检索特定字段的足够权限。
+> warning **Warning** This chapter applies only to the code first approach.
 
-#### 添加自定义元数据
+Extensions are an **advanced, low-level feature** that lets you define arbitrary data in the types configuration. Attaching custom metadata to certain fields allows you to build more sophisticated, generic solutions. For example, with extensions, you can define the roles required to access particular fields. Your code can read these roles at runtime to determine whether the caller has sufficient permissions to retrieve a specific field.
 
-要为字段附加自定义元数据，请使用从 `@nestjs/graphql` 包导出的 `@Extensions()` 装饰器。
+#### Adding custom metadata
+
+To attach custom metadata to a field, use the `@Extensions()` decorator exported from the `@nestjs/graphql` package:
 
 ```typescript
 @Field()
@@ -17,33 +19,33 @@ password: string;
 
 ```
 
-在上面的示例中，我们将 `role` 元数据属性赋值为 `Role.ADMIN`。`Role` 是一个简单的 TypeScript 枚举，用于分组系统中所有可用的用户角色。
+In the example above, we assigned the value `Role.ADMIN` to the `role` metadata property. `Role` is a TypeScript enum that groups all the user roles available in our system.
 
-注意，除了在字段上设置元数据外，您还可以在类级别和方法级别（例如查询处理程序上）使用 `@Extensions()` 装饰器。
+In addition to fields, you can use the `@Extensions()` decorator at the class level and at the method level (e.g., on a query handler).
 
-#### 使用自定义元数据
+#### Using custom metadata
 
-利用自定义元数据的逻辑可以根据需要变得非常复杂。例如，您可以创建一个简单的拦截器来存储/记录每次方法调用的事件，或者创建一个[字段中间件](/graphql/field-middleware)来匹配检索字段所需的角色与调用者权限（字段级权限系统）。
+The logic that uses the custom metadata can be as complex as needed. For example, you can create an interceptor that stores or logs events per method invocation, or a [field middleware](/graphql/field-middleware) that matches the roles required to retrieve a field against the caller's permissions (a field-level permissions system).
 
-出于演示目的，我们定义一个 `checkRoleMiddleware` 中间件，用于比较用户角色（此处硬编码）与访问目标字段所需的角色：
+For illustration purposes, let's define a `checkRoleMiddleware` that compares a user's role (hardcoded here) with the role required to access a target field:
 
 ```typescript
 export const checkRoleMiddleware: FieldMiddleware = async (
   ctx: MiddlewareContext,
-  next: NextFn
+  next: NextFn,
 ) => {
-  const { info } = ctx;
+  const info = ctx.info!;
   const { extensions } = info.parentType.getFields()[info.fieldName];
 
   /**
    * In a real-world application, the "userRole" variable
-   * should represent the caller's (user) role (for example, "ctx.user.role").
+   * should represent the caller's (user) role (e.g., read from "ctx.context").
    */
   const userRole = Role.USER;
-  if (userRole === extensions.role) {
-    // or just "return null" to ignore
+  if (userRole !== extensions.role) {
+    // or "return null" to hide the value instead
     throw new ForbiddenException(
-      `User does not have sufficient permissions to access "${info.fieldName}" field.`
+      `User does not have sufficient permissions to access "${info.fieldName}" field.`,
     );
   }
   return next();
@@ -51,7 +53,7 @@ export const checkRoleMiddleware: FieldMiddleware = async (
 
 ```
 
-完成上述定义后，我们可以为 `password` 字段注册中间件，如下所示：
+With this in place, register the middleware for the `password` field:
 
 ```typescript
 @Field({ middleware: [checkRoleMiddleware] })

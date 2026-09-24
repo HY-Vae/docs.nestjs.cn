@@ -1,6 +1,10 @@
+<!-- 此文件从 content/faq/multiple-servers.md 自动生成，请勿直接修改此文件 -->
+<!-- 生成时间: 2026-09-24T07:16:08.309Z -->
+<!-- 源文件: content/faq/multiple-servers.md -->
+
 ### HTTPS
 
-要创建使用 HTTPS 协议的应用程序，需在传递给 `NestFactory` 类的 `create()` 方法的配置对象中设置 `httpsOptions` 属性：
+To create an application that uses the HTTPS protocol, set the `httpsOptions` property in the options object passed to the `NestFactory.create()` method:
 
 ```typescript
 const httpsOptions = {
@@ -14,19 +18,19 @@ await app.listen(process.env.PORT ?? 3000);
 
 ```
 
-如果使用 `FastifyAdapter`，则按如下方式创建应用程序：
+If you use the `FastifyAdapter`, create the application as follows:
 
 ```typescript
 const app = await NestFactory.create<NestFastifyApplication>(
   AppModule,
-  new FastifyAdapter({ https: httpsOptions })
+  new FastifyAdapter({ https: httpsOptions }),
 );
 
 ```
 
-#### 同时运行多个服务器
+#### Multiple simultaneous servers
 
-以下示例展示了如何实例化一个 Nest 应用程序，使其能够同时监听多个端口（例如非 HTTPS 端口和 HTTPS 端口）。
+The following recipe shows how to create a Nest application that listens on multiple ports simultaneously (for example, on an HTTP port and an HTTPS port):
 
 ```typescript
 const httpsOptions = {
@@ -43,7 +47,7 @@ const httpsServer = https.createServer(httpsOptions, server).listen(443);
 
 ```
 
-由于我们自行调用了 `http.createServer`/`https.createServer`，NestJS 在调用 `app.close` 或终止信号时不会关闭这些服务器。我们需要自行处理：
+Because we created the servers ourselves with `http.createServer()` and `https.createServer()`, Nest doesn't close them when you call `app.close()` or when the process receives a termination signal. You need to close them yourself, for example with a provider that implements the `OnApplicationShutdown` hook:
 
 ```typescript
 @Injectable()
@@ -66,8 +70,8 @@ export class ShutdownObserver implements OnApplicationShutdown {
                 resolve(null);
               }
             });
-          })
-      )
+          }),
+      ),
     );
   }
 }
@@ -78,11 +82,6 @@ shutdownObserver.addHttpServer(httpsServer);
 
 ```
 
-:::info 注意
-注意
-:::
+> info **Hint** The `ExpressAdapter` is imported from the `@nestjs/platform-express` package. The `http` and `https` modules are built into Node.js.
 
-:::warning 警告
-此方案不适用于 [GraphQL 订阅](/graphql/subscriptions) 。
-:::
-
+> warning **Warning** This recipe does not work with [GraphQL subscriptions](/graphql/subscriptions).
