@@ -1,21 +1,27 @@
+<!-- 此文件从 content/microservices/nats.md 自动生成，请勿直接修改此文件 -->
+<!-- 生成时间: 2026-09-25T07:10:07.206Z -->
+<!-- 源文件: content/microservices/nats.md -->
+
 ### NATS
 
-[NATS](https://nats.io) 是一个简单、安全且高性能的开源消息系统，专为云原生应用、物联网消息传递和微服务架构设计。NATS 服务器采用 Go 编程语言编写，同时提供支持数十种主流编程语言的客户端库以便与服务器交互。NATS 同时支持**至多一次**和**至少一次**消息传递模式，能够运行在任何环境——从大型服务器和云实例，到边缘网关乃至物联网设备。
+[NATS](https://nats.io) is a simple, secure, and high-performance open source messaging system for cloud native applications, IoT messaging, and microservices architectures. The NATS server is written in Go, and client libraries are available for dozens of major programming languages. NATS supports both **At Most Once** and **At Least Once** delivery. It runs anywhere, from large servers and cloud instances to edge gateways and Internet of Things devices.
 
-#### 安装
+#### Installation
 
-要开始构建基于 NATS 的微服务，首先需要安装所需软件包：
+To start building NATS-based microservices, first install the required package:
 
 ```bash
-$ npm i --save nats
+$ npm i --save @nats-io/transport-node
 
 ```
 
-#### 概述
+> warning **Warning** As of NestJS v12, the NATS transporter targets **NATS v3** and uses the `@nats-io/transport-node` driver. If you are upgrading from an earlier version, uninstall the legacy `nats` package (`npm uninstall nats`) and install `@nats-io/transport-node` instead. See the [migration guide](/migration-guide#nats-v3) for details.
 
-使用 NATS 传输器时，请将以下配置对象传入 `createMicroservice()` 方法：
+#### Overview
 
- ```typescript title="main.ts"
+To use the NATS transporter, pass the following options object to the `createMicroservice()` method:
+
+```typescript
 const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
   transport: Transport.NATS,
   options: {
@@ -25,25 +31,36 @@ const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule,
 
 ```
 
-:::info 提示
-`Transport` 枚举是从 `@nestjs/microservices` 包中导入的。
-:::
+> info **Hint** The `Transport` enum is imported from the `@nestjs/microservices` package.
 
-#### 选项
+#### Options
 
-`options` 对象特定于所选的传输器。**NATS** 传输器公开了[此处](https://github.com/nats-io/node-nats#connection-options)描述的属性以及以下属性：
+The `options` object is specific to the chosen transporter. The <strong>NATS</strong> transporter exposes the [NATS connection options](https://github.com/nats-io/nats.js/blob/main/core/README.md#connecting-to-a-nats-server), as well as the following properties:
 
-| 选项               | 描述                                                                                  |
-| ----------------- | ------------------------------------------------------------------------------------- |
-| `queue`           | 服务器应订阅的队列（保留 undefined 可忽略此设置）。详细了解 NATS 队列组如下。           |
-| `gracefulShutdown` | 启用优雅关闭。启用后，服务器在关闭连接前会先取消订阅所有频道。默认为 false。            |
-| `gracePeriod`     | 取消订阅所有频道后等待服务器的毫秒数。默认为 10000 毫秒。                               |
+<table>
+  <tr>
+    <td><code>queue</code></td>
+    <td>Queue group that your server subscribes with (leave <code>undefined</code> to ignore this setting). Read more about NATS queue groups <a href="/microservices/nats#queue-groups">below</a>.</td>
+  </tr>
+  <tr>
+    <td><code>gracefulShutdown</code></td>
+    <td>Enables graceful shutdown. When enabled, the server first unsubscribes from all subjects, then waits for <code>gracePeriod</code> before closing the connection. Default is <code>false</code>.</td>
+  </tr>
+  <tr>
+    <td><code>gracePeriod</code></td>
+    <td>Time in milliseconds to wait after unsubscribing from all subjects when <code>gracefulShutdown</code> is enabled. Default is <code>10000</code> ms.</td>
+  </tr>
+  <tr>
+    <td><code>headers</code></td>
+    <td>Headers added to every message a client sends (see <a href="/microservices/nats#record-builders">record builders</a>).</td>
+  </tr>
+</table>
 
-#### 客户端
+#### Client
 
-与其他微服务传输器类似，创建 NATS `ClientProxy` 实例时您有[多种选择](../microservices/basics#客户端生产者类) 。
+As with other microservice transporters, you have <a href="/microservices/basics#client">several options</a> for creating a NATS `ClientProxy` instance.
 
-一种创建实例的方法是使用 `ClientsModule`。要通过 `ClientsModule` 创建客户端实例，需先导入该模块，然后使用 `register()` 方法传入一个选项对象，该对象包含与上述 `createMicroservice()` 方法相同的属性，以及用作注入令牌的 `name` 属性。更多关于 `ClientsModule` 的信息请参阅[此处](../microservices/basics#客户端生产者类) 。
+One way to create an instance is to use the `ClientsModule`. Import it and use its `register()` method to pass an options object with the same properties shown above for the `createMicroservice()` method, plus a `name` property to use as the injection token. Read more about the `ClientsModule` in the <a href="/microservices/basics#client">client section of the overview</a>.
 
 ```typescript
 @Module({
@@ -63,21 +80,21 @@ const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule,
 
 ```
 
-也可以使用其他创建客户端的方法（`ClientProxyFactory` 或 `@Client()`）。相关说明可查看[此文档](../microservices/basics#客户端生产者类) 。
+You can also create a client with `ClientProxyFactory` or the `@Client()` decorator. Both are described in the <a href="/microservices/basics#client">client section of the overview</a>.
 
-#### 请求-响应模式
+#### Request-response
 
-对于**请求-响应**消息模式（ [了解更多](../microservices/basics#请求-响应) ），NATS 传输器不使用 NATS 内置的[请求-应答](https://docs.nats.io/nats-concepts/reqreply)机制。相反，"请求"通过带有唯一回复主题名称的 `publish()` 方法在给定主题上发布，响应者监听该主题并将响应发送至回复主题。无论双方位置如何，回复主题都会动态定向回请求方。
+For the [request-response](/microservices/basics#request-response) message style, the NATS transporter doesn't use the built-in NATS [Request-Reply](https://docs.nats.io/nats-concepts/reqreply) API. Instead, the client publishes a "request" on a given subject with the `publish()` method and a unique reply subject name. Responders listen on that subject and send responses to the reply subject. Reply subjects are routed back to the requester dynamically, regardless of the location of either party.
 
-#### 基于事件
+#### Event-based
 
-对于**基于事件**的消息模式（ [了解更多](../microservices/basics#基于事件) ），NATS 传输器使用 NATS 内置的[发布-订阅](https://docs.nats.io/nats-concepts/pubsub)机制。发布者在主题上发送消息，任何监听该主题的活跃订阅者都会收到消息。订阅者还可以注册对通配符主题的兴趣，这些通配符主题的工作方式有点像正则表达式。这种一对多模式有时被称为扇出。
+For the [event-based](/microservices/basics#event-based) message style, the NATS transporter uses the built-in NATS [Publish-Subscribe](https://docs.nats.io/nats-concepts/pubsub) mechanism. A publisher sends a message on a subject, and every active subscriber listening on that subject receives the message. Subscribers can also register interest in [wildcard](#wildcards) subjects. This one-to-many pattern is sometimes called fan-out.
 
-#### 队列组
+#### Queue groups
 
-NATS 提供了一个名为[分布式队列](https://docs.nats.io/nats-concepts/queue)的内置负载均衡功能。要创建队列订阅，请按如下方式使用 `queue` 属性：
+NATS provides a built-in load balancing feature called [distributed queues](https://docs.nats.io/nats-concepts/queue). To create a queue subscription, use the `queue` property as follows:
 
- ```typescript title="main.ts"
+```typescript
 const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
   transport: Transport.NATS,
   options: {
@@ -88,9 +105,9 @@ const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule,
 
 ```
 
-#### 上下文
+#### Context
 
-在更复杂的场景中，您可能需要访问有关传入请求的额外信息。使用 NATS 传输器时，您可以访问 `NatsContext` 对象。
+In more complex scenarios, you may need additional information about the incoming request. With the NATS transporter, you can access the `NatsContext` object.
 
 ```typescript
 @MessagePattern('notifications')
@@ -100,13 +117,11 @@ getNotifications(@Payload() data: number[], @Ctx() context: NatsContext) {
 
 ```
 
-:::info 提示
-`@Payload()`、`@Ctx()` 和 `NatsContext` 均从 `@nestjs/microservices` 包导入。
-:::
+> info **Hint** `@Payload()`, `@Ctx()` and `NatsContext` are imported from the `@nestjs/microservices` package.
 
-#### 通配符
+#### Wildcards
 
-订阅可以针对明确的主题，也可以包含通配符。
+A subscription can target an explicit subject, or it can include wildcards.
 
 ```typescript
 @MessagePattern('time.us.*')
@@ -117,12 +132,12 @@ getDate(@Payload() data: number[], @Ctx() context: NatsContext) {
 
 ```
 
-#### 记录构建器
+#### Record builders
 
-要配置消息选项，可以使用 `NatsRecordBuilder` 类（注意：这也适用于基于事件的流程）。例如，要添加 `x-version` 头部，使用 `setHeaders` 方法，如下所示：
+To configure message options, use the `NatsRecordBuilder` class. It works for both request-response and event-based flows. For example, to add an `x-version` header, use the `setHeaders()` method:
 
 ```typescript
-import * as nats from 'nats';
+import * as nats from '@nats-io/nats-core';
 
 // somewhere in your code
 const headers = nats.headers();
@@ -133,22 +148,20 @@ this.client.send('replace-emoji', record).subscribe(...);
 
 ```
 
-:::info 提示
-`NatsRecordBuilder` 类是从 `@nestjs/microservices` 包中导出的。
-:::
+> info **Hint** The `NatsRecordBuilder` class is exported from the `@nestjs/microservices` package.
 
-你也可以在服务器端通过访问 `NatsContext` 来读取这些头部信息，如下所示：
+On the server side, you can read these headers through the `NatsContext`:
 
 ```typescript
 @MessagePattern('replace-emoji')
 replaceEmoji(@Payload() data: string, @Ctx() context: NatsContext): string {
   const headers = context.getHeaders();
-  return headers['x-version'] === '1.0.0' ? '🐱' : '🐈';
+  return headers?.get('x-version') === '1.0.0' ? '🐱' : '🐈';
 }
 
 ```
 
-在某些情况下，你可能需要为多个请求配置头部信息，可以将这些作为选项传递给 `ClientProxyFactory`：
+To configure headers for all requests sent by a client, pass them as options to the `ClientProxyFactory`:
 
 ```typescript
 import { Module } from '@nestjs/common';
@@ -173,9 +186,27 @@ export class ApiModule {}
 
 ```
 
-#### 实例状态更新
+Headers set on a record take precedence over the client-level `headers` option.
 
-要获取关于连接和底层驱动程序实例状态的实时更新，你可以订阅 `status` 流。该流提供特定于所选驱动程序的状态更新。对于 NATS 驱动程序，`status` 流会发出 `connected`（已连接）、`disconnected`（已断开）和 `reconnecting`（正在重连）事件。
+#### Custom serializers and deserializers
+
+Starting with NestJS v12, Nest serializes NATS packets as JSON strings, and custom NATS deserializers receive the full NATS message object instead of a raw `Uint8Array`. If you have written a custom deserializer, read the payload through `msg.json()` rather than decoding bytes manually:
+
+```typescript
+import { Deserializer, IncomingRequest } from '@nestjs/microservices';
+
+export class CustomNatsDeserializer implements Deserializer {
+  deserialize(msg: any): IncomingRequest {
+    // Previously: JSON.parse(new TextDecoder().decode(msg));
+    return msg.json();
+  }
+}
+
+```
+
+#### Instance status updates
+
+To get real-time updates on the connection and the state of the underlying driver instance, subscribe to the `status` stream. This stream provides status updates specific to the chosen driver. For the NATS driver, the `status` stream emits `connected`, `disconnected`, and `reconnecting` events.
 
 ```typescript
 this.client.status.subscribe((status: NatsStatus) => {
@@ -184,11 +215,9 @@ this.client.status.subscribe((status: NatsStatus) => {
 
 ```
 
-:::info 提示
-`NatsStatus` 类型是从 `@nestjs/microservices` 包中导入的。
-:::
+> info **Hint** The `NatsStatus` type is imported from the `@nestjs/microservices` package.
 
-同样地，您可以订阅服务器的 `status` 流来接收有关服务器状态的通知。
+Similarly, you can subscribe to the server's `status` stream to receive notifications about the server's status.
 
 ```typescript
 const server = app.connectMicroservice<MicroserviceOptions>(...);
@@ -198,44 +227,44 @@ server.status.subscribe((status: NatsStatus) => {
 
 ```
 
-#### 监听 Nats 事件
+#### Listening to NATS events
 
-在某些情况下，您可能需要监听微服务发出的内部事件。例如，您可以监听 `error` 事件，以便在发生错误时触发其他操作。为此，请使用如下所示的 `on()` 方法：
+In some cases, you might want to listen to internal events emitted by the microservice. The NATS transporter emits the `disconnect`, `reconnect`, and `update` (cluster servers added or removed) events. For example, you could listen for the `disconnect` event to trigger additional operations when the connection is lost. To do this, use the `on()` method, as shown below:
 
 ```typescript
-this.client.on('error', (err) => {
-  console.error(err);
+this.client.on('disconnect', (serverUrl) => {
+  console.error(`Disconnected from ${serverUrl}`);
 });
 
 ```
 
-同样地，您可以监听服务器的内部事件：
+Similarly, you can listen to the server's internal events:
 
 ```typescript
-server.on<NatsEvents>('error', (err) => {
-  console.error(err);
+server.on<NatsEvents>('disconnect', (serverUrl) => {
+  console.error(`Disconnected from ${serverUrl}`);
 });
 
 ```
 
-:::info 提示
-`NatsEvents` 类型是从 `@nestjs/microservices` 包中导入的。
-:::
+> info **Hint** The `NatsEvents` type is imported from the `@nestjs/microservices` package.
 
-#### 底层驱动访问
+#### Underlying driver access
 
-对于更高级的用例，您可能需要访问底层驱动实例。这在手动关闭连接或使用驱动特定方法等场景中非常有用。但请注意，在大多数情况下，您**不需要**直接访问驱动。
+For more advanced use cases, you may need to access the underlying driver instance, for example, to close the connection manually or to use driver-specific methods. In most cases, however, you **shouldn't need** to access the driver directly.
 
-为此，您可以使用 `unwrap()` 方法，该方法会返回底层驱动实例。泛型类型参数应指定您预期的驱动实例类型。
+To do so, use the `unwrap()` method, which returns the underlying driver instance. The generic type parameter specifies the type of driver instance you expect.
 
 ```typescript
-const natsConnection = this.client.unwrap<import('nats').NatsConnection>();
+const natsConnection =
+  this.client.unwrap<import('@nats-io/transport-node').NatsConnection>();
 
 ```
 
-同样地，您可以访问服务器的底层驱动实例：
+Similarly, you can access the server's underlying driver instance:
 
 ```typescript
-const natsConnection = server.unwrap<import('nats').NatsConnection>();
+const natsConnection =
+  server.unwrap<import('@nats-io/transport-node').NatsConnection>();
 
 ```

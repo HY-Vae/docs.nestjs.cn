@@ -1,18 +1,20 @@
-### 动态模块
+<!-- 此文件从 content/fundamentals/dynamic-modules.md 自动生成，请勿直接修改此文件 -->
+<!-- 生成时间: 2026-09-25T07:10:07.210Z -->
+<!-- 源文件: content/fundamentals/dynamic-modules.md -->
 
-[模块章节](/modules)涵盖了Nest模块的基础知识，并包括了[动态模块](/modules#动态模块)的简要介绍。本章将详细介绍动态模块的主题。完成本章后，您应该对动态模块是什么、如何使用以及何时使用有很好的理解。
+### Dynamic modules
 
-#### 介绍
+The [Modules chapter](/modules) covers the basics of Nest modules and includes a brief introduction to [dynamic modules](/modules#dynamic-modules). This chapter expands on the subject: what dynamic modules are, how to build them, and when to use them.
 
-文档**概述**部分中的大多数应用程序代码示例都使用常规的或静态的模块。模块定义了组件组，如[Providers](/overview/providers)和[控制器](/controllers)，它们作为整体应用程序的模块化部分组合在一起。它们为这些组件提供执行上下文或作用域。例如，在模块中定义的提供者对模块的其他成员可见，无需导出它们。当提供者需要在模块外部可见时，它首先从其宿主模块导出，然后导入到其消费模块中。
+#### Introduction
 
-让我们通过一个熟悉的示例来了解。
+Most code examples in the **Overview** section of the documentation use regular, or static, modules. Modules define groups of components, such as [providers](/providers) and [controllers](/controllers), that fit together as a modular part of an application. They provide an execution context, or scope, for these components. For example, providers defined in a module are visible to other members of the module without being exported. When a provider needs to be visible outside of a module, it is first exported from its host module, and then imported into its consuming module.
 
-首先，我们将定义一个`UsersModule`来提供和导出`UsersService`。`UsersModule`是`UsersService`的**宿主**模块。
+Consider a familiar example. First, a `UsersModule` provides and exports a `UsersService`. `UsersModule` is the **host** module for `UsersService`.
 
 ```typescript
 import { Module } from '@nestjs/common';
-import { UsersService } from './users.service';
+import { UsersService } from './users.service.js';
 
 @Module({
   providers: [UsersService],
@@ -22,12 +24,12 @@ export class UsersModule {}
 
 ```
 
-接下来，我们将定义一个`AuthModule`，它导入`UsersModule`，使`UsersModule`的导出提供者在`AuthModule`内部可用：
+Next, an `AuthModule` imports `UsersModule`, which makes `UsersModule`'s exported providers available inside `AuthModule`:
 
 ```typescript
 import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { UsersModule } from '../users/users.module';
+import { AuthService } from './auth.service.js';
+import { UsersModule } from '../users/users.module.js';
 
 @Module({
   imports: [UsersModule],
@@ -38,401 +40,393 @@ export class AuthModule {}
 
 ```
 
-这些构造允许我们在例如`AuthModule`中托管的`AuthService`中注入`UsersService`：
+These constructs allow us to inject `UsersService` into, for example, the `AuthService` hosted in `AuthModule`:
 
 ```typescript
 import { Injectable } from '@nestjs/common';
-import { UsersService } from '../users/users.service';
+import { UsersService } from '../users/users.service.js';
 
 @Injectable()
 export class AuthService {
-  constructor(private usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) {}
   /*
-    使用 this.usersService 的实现
+    Implementation that makes use of this.usersService
   */
 }
 
 ```
 
-我们将此称为**静态**模块绑定。Nest将模块连接在一起所需的所有信息已经在宿主和消费模块中声明。让我们分解这个过程中发生的事情。Nest通过以下方式使`UsersService`在`AuthModule`内部可用：
+We'll refer to this as **static** module binding. All the information Nest needs to wire the modules together is declared in the host and consuming modules. Nest makes `UsersService` available inside `AuthModule` by:
 
-1. 实例化`UsersModule`，包括传递性导入`UsersModule`本身消费的其他模块，并传递性解析任何依赖项（请参阅[自定义提供者](/fundamentals/dependency-injection)）。
-2. 实例化`AuthModule`，并使`UsersModule`的导出提供者对`AuthModule`中的组件可用（就像它们在`AuthModule`中声明一样）。
-3. 在`AuthService`中注入`UsersService`的实例。
+1. Instantiating `UsersModule`, including transitively importing the modules that `UsersModule` itself consumes, and transitively resolving any dependencies (see [Custom providers](/fundamentals/custom-providers)).
+2. Instantiating `AuthModule`, and making `UsersModule`'s exported providers available to components in `AuthModule` (as if they had been declared in `AuthModule`).
+3. Injecting an instance of `UsersService` into `AuthService`.
 
-#### 动态模块用例
+#### Dynamic module use case
 
-使用静态模块绑定，消费模块没有机会**影响**来自宿主模块的提供者如何配置。为什么这很重要？考虑我们有一个通用模块，需要在不同用例中表现不同的情况。这类似于许多系统中的"插件"概念，其中通用设施在被消费者使用之前需要一些配置。
+With static module binding, the consuming module has no way to **influence** how the providers of the host module are configured. This matters for general-purpose modules that need to behave differently for each consumer, much like a "plugin" that requires some configuration before it can be used.
 
-Nest中的一个很好的例子是**配置模块**。许多应用程序发现通过使用配置模块来外部化配置细节是有用的。这使得在不同部署中动态更改应用程序设置变得容易：例如，开发人员的开发数据库，暂存/测试环境的暂存数据库等。通过将配置参数的管理委托给配置模块，应用程序源代码保持与配置参数无关。
+As an example, consider a module that generates the public identifiers of your entities. Identifiers that start with a type prefix, such as `usr_` for users and `ord_` for orders, tell you at a glance what kind of entity they refer to. The generation logic is the same for every entity, and only the prefix differs. With static binding, an `IdGeneratorModule` could provide only one generator, configured one way for every module that imports it. What we need instead is for `UsersModule` and `OrdersModule` to each import the module with their own prefix.
 
-挑战在于，配置模块本身，由于它是通用的（类似于"插件"），需要由其消费模块进行定制。这就是**动态模块**发挥作用的地方。使用动态模块功能，我们可以使我们的配置模块**动态**，以便消费模块可以使用API来控制配置模块在导入时的定制方式。
-
-换句话说，动态模块提供了一个API，用于将一个模块导入到另一个模块中，并在导入时自定义该模块的属性和行为，而不是使用我们到目前为止看到的静态绑定。
+This is where **dynamic modules** come into play. A dynamic module provides an API for importing one module into another and customizing the properties and behavior of that module at the time it is imported.
 
 <app-banner-devtools></app-banner-devtools>
 
-#### 配置模块示例
+#### Dynamic module example
 
-我们将使用[配置章节](/techniques/configuration#服务)中的基本版本的示例代码。本章结束时的完整版本可作为工作[示例在此处](https://github.com/nestjs/nest/tree/master/sample/25-dynamic-modules)。
-
-我们的要求是使`ConfigModule`接受一个`options`对象来自定义它。这是我们想要支持的功能。基本示例硬编码`.env`文件的位置在项目根文件夹中。让我们假设我们想使其可配置，这样您可以在任何选择的文件夹中管理您的`.env`文件。例如，假设您想将各种`.env`文件存储在项目根目录下名为`config`的文件夹中（即`src`的同级文件夹）。您希望能够在不同项目中使用`ConfigModule`时选择不同的文件夹。
-
-动态模块使我们能够将参数传递到正在导入的模块中，以便我们可以更改其行为。让我们看看这是如何工作的。如果我们从消费模块的角度开始考虑最终目标，然后向后工作，这会很有帮助。首先，让我们快速回顾一下**静态**导入`ConfigModule`的示例（即一种无法影响导入模块行为的方法）。请密切关注`@Module()`装饰器中的`imports`数组：
+It's helpful to start from how the module looks from the consuming module's perspective, and then work backwards. A static import leaves no room to pass a prefix:
 
 ```typescript
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { ConfigModule } from './config/config.module';
+import { IdGeneratorModule } from '../id-generator/id-generator.module.js';
+import { UsersService } from './users.service.js';
 
 @Module({
-  imports: [ConfigModule],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [IdGeneratorModule],
+  providers: [UsersService],
 })
-export class AppModule {}
+export class UsersModule {}
 
 ```
 
-让我们考虑一下**动态模块**导入的样子，我们在其中传递配置对象。比较这两个示例中`imports`数组的差异：
+A dynamic import, on the other hand, passes an options object. Compare the `imports` arrays of the two examples:
 
 ```typescript
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { ConfigModule } from './config/config.module';
+import { IdGeneratorModule } from '../id-generator/id-generator.module.js';
+import { UsersService } from './users.service.js';
 
 @Module({
-  imports: [ConfigModule.register({ folder: './config' })],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [IdGeneratorModule.register({ prefix: 'usr' })],
+  providers: [UsersService],
 })
-export class AppModule {}
+export class UsersModule {}
 
 ```
 
-让我们看看上面的动态示例中发生了什么。有哪些移动部件？
+Let's look at the moving parts of the dynamic example:
 
-1. `ConfigModule`是一个普通类，所以我们可以推断它必须有一个**静态方法** called `register()`。我们知道它是静态的，因为我们在`ConfigModule`类上调用它，而不是在类的**实例**上。注意：这个我们即将创建的方法可以有任何任意名称，但按照约定，我们应该称之为`forRoot()`或`register()`。
-2. `register()`方法由我们定义，所以我们可以接受任何我们喜欢的输入参数。在这种情况下，我们将接受一个带有适当属性的简单`options`对象，这是典型情况。
-3. 我们可以推断`register()`方法必须返回类似于`module`的东西，因为它的返回值出现在熟悉的`imports`列表中，到目前为止，我们已经看到它包括模块列表。
+1. `IdGeneratorModule` is a normal class, so it must have a **static method** called `register()`. The method is static because it's called on the class, not on an **instance** of the class. The method can have any name, but by convention it's called `register()`, `forRoot()`, or `forFeature()` (see [Community guidelines](#community-guidelines)).
+2. We define the `register()` method ourselves, so it can accept any arguments we like. Typically, as here, it accepts an options object.
+3. The value returned by `register()` appears in the `imports` array, alongside module classes, so it must be something Nest can treat as a module.
 
-事实上，我们的`register()`方法将返回一个`DynamicModule`。动态模块只不过是在运行时创建的模块，具有与静态模块完全相同的属性，加上一个称为`module`的额外属性。让我们快速回顾一个示例静态模块声明，密切关注传递给装饰器的模块选项：
+In fact, `register()` returns a `DynamicModule`. A dynamic module is a module created at runtime. It has exactly the same properties as the metadata of a static module, plus one additional property called `module`. Here's a sample static module declaration, for comparison:
 
 ```typescript
 @Module({
   imports: [DogsModule],
   controllers: [CatsController],
   providers: [CatsService],
-  exports: [CatsService]
+  exports: [CatsService],
 })
 
 ```
 
-动态模块必须返回一个具有完全相同接口的对象，加上一个称为`module`的额外属性。`module`属性用作模块的名称，应该与模块的类名相同，如下面的示例所示。
+A dynamic module is an object with the same properties, plus the `module` property, which references the module class itself.
 
-::: info 提示
-对于动态模块，模块选项对象的所有属性都是可选的**除了** `module`。
-:::
+> info **Hint** For a dynamic module, all properties of the module options object are optional **except** `module`.
 
-那么静态`register()`方法呢？我们现在可以看到，它的工作是返回一个具有`DynamicModule`接口的对象。当我们调用它时，我们实际上是在向`imports`列表提供一个模块，类似于我们在静态情况下通过列出模块类名的方式。换句话说，动态模块API只是返回一个模块，但我们不是在`@Module`装饰器中修复属性，而是以编程方式指定它们。
+The job of the static `register()` method is therefore to return an object that implements the `DynamicModule` interface. Calling it provides a module to the `imports` array, much like listing a module class does in the static case. The difference is that the module's properties are specified programmatically instead of being fixed in the `@Module()` decorator.
 
-还有几个细节需要涵盖，以帮助完成整个画面：
+Two more details complete the picture:
 
-1. 我们现在可以声明`@Module()`装饰器的`imports`属性不仅可以接受模块类名（例如，`imports: [UsersModule]`），还可以接受**返回**动态模块的函数（例如，`imports: [ConfigModule.register(...)]`）。
-2. 动态模块本身可以导入其他模块。我们不会在这个示例中这样做，但是如果动态模块依赖于其他模块的提供者，您将使用可选的`imports`属性导入它们。同样，这与您使用`@Module()`装饰器为静态模块声明元数据的方式完全类似。
+1. The `imports` array of the `@Module()` decorator accepts not only module classes (e.g., `imports: [UsersModule]`), but also the dynamic modules returned by static methods (e.g., `imports: [IdGeneratorModule.register(...)]`).
+2. A dynamic module can itself import other modules. If it depends on providers from other modules, list them in its optional `imports` property, exactly as you would in the `@Module()` decorator of a static module.
 
-有了这种理解，我们现在可以看看我们的动态`ConfigModule`声明必须是什么样子。让我们试一下。
+With this in mind, here's a first version of the dynamic `IdGeneratorModule`:
 
 ```typescript
 import { DynamicModule, Module } from '@nestjs/common';
-import { ConfigService } from './config.service';
+import { IdGenerator } from './id-generator.js';
 
 @Module({})
-export class ConfigModule {
+export class IdGeneratorModule {
   static register(): DynamicModule {
     return {
-      module: ConfigModule,
-      providers: [ConfigService],
-      exports: [ConfigService],
+      module: IdGeneratorModule,
+      providers: [IdGenerator],
+      exports: [IdGenerator],
     };
   }
 }
 
 ```
 
-现在应该清楚各个部分是如何联系在一起的。调用`ConfigModule.register(...)`返回一个`DynamicModule`对象，其属性基本上与我们直到现在通过`@Module()`装饰器作为元数据提供的属性相同。
+Calling `IdGeneratorModule.register()` returns a `DynamicModule` object whose properties are essentially the same as those that, until now, we've provided as metadata through the `@Module()` decorator.
 
-::: info 提示 
-从`@nestjs/common`导入`DynamicModule`。
-:::
+> info **Hint** Import `DynamicModule` from `@nestjs/common`.
 
-然而，我们的动态模块还不是很有趣，因为我们还没有引入任何**配置**它的能力，正如我们所说的那样。让我们接下来解决这个问题。
+This module isn't configurable yet, though. Let's address that next.
 
-#### 模块配置
+#### Module configuration
 
-自定义`ConfigModule`行为的明显解决方案是在静态`register()`方法中传递一个`options`对象，如我们上面所猜测的。让我们再次查看我们的消费模块的`imports`属性：
-
-```typescript
-import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { ConfigModule } from './config/config.module';
-
-@Module({
-  imports: [ConfigModule.register({ folder: './config' })],
-  controllers: [AppController],
-  providers: [AppService],
-})
-export class AppModule {}
-
-```
-
-这很好地处理了将`options`对象传递给我们的动态模块。然后我们如何在`ConfigModule`中使用这个`options`对象呢？让我们考虑一下。我们知道我们的`ConfigModule`基本上是一个主机，用于提供和导出一个可注入的服务 - `ConfigService` - 供其他提供者使用。实际上是我们的`ConfigService`需要读取`options`对象来自定义其行为。让我们暂时假设我们知道如何以某种方式将`options`从`register()`方法传递到`ConfigService`中。基于这个假设，我们可以对服务进行一些更改，以根据`options`对象中的属性自定义其行为。（**注意**：暂时，由于我们**还没有**确定如何传递它，我们将只是硬编码`options`。我们稍后会修复这个问题）。
+The consuming module passes the options to `register()`, as shown above. The question is how to get them to the component that needs them. `IdGeneratorModule` hosts and exports an injectable service, `IdGenerator`, and it's `IdGenerator` that needs the prefix. For now, the service hard-codes it:
 
 ```typescript
 import { Injectable } from '@nestjs/common';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import * as dotenv from 'dotenv';
-import { EnvConfig } from './interfaces';
+import { randomUUID } from 'node:crypto';
 
 @Injectable()
-export class ConfigService {
-  private readonly envConfig: EnvConfig;
-
-  constructor() {
-    const options = { folder: './config' };
-
-    const filePath = `${process.env.NODE_ENV || 'development'}.env`;
-    const envFile = path.resolve(__dirname, '../../', options.folder, filePath);
-    this.envConfig = dotenv.parse(fs.readFileSync(envFile));
-  }
-
-  get(key: string): string {
-    return this.envConfig[key];
+export class IdGenerator {
+  generate(): string {
+    const options = { prefix: 'usr' };
+    return `${options.prefix}_${randomUUID()}`;
   }
 }
 
 ```
 
-现在我们的`ConfigService`知道如何在我们在`options`中指定的文件夹中找到`.env`文件。
+Our remaining task is to pass the `options` object from the `register()` method to `IdGenerator`, and we'll use _dependency injection_ to do it. This is the key point: `IdGeneratorModule` provides `IdGenerator`, and `IdGenerator` depends on an `options` object that is supplied only at runtime. So, at runtime, we first bind the `options` object to the Nest IoC container, and then let Nest inject it into `IdGenerator`. As the **Custom providers** chapter explains, providers can [be any value](/fundamentals/custom-providers#non-service-based-providers), not only services, so a plain `options` object works too.
 
-我们剩下的任务是以某种方式将`options`对象从`register()`步骤注入到我们的`ConfigService`中。当然，我们将使用**依赖注入**来做到这一点。这是一个关键点，所以确保你理解它。我们的`ConfigModule`正在提供`ConfigService`。`ConfigService`反过来依赖于仅在运行时提供的`options`对象。因此，在运行时，我们需要首先将`options`对象绑定到Nest IoC容器，然后让Nest将其注入到我们的`ConfigService`中。请记住，在**自定义提供者**章节中，提供者可以[包含任何值](/fundamentals/dependency-injection#非基于服务的提供者)，而不仅仅是服务，所以我们可以使用依赖注入来处理简单的`options`对象。
+First, describe the options with an interface, and define an injection token for them. A token defined as a constant (or a `Symbol`) in a separate file can be imported wherever it's needed:
 
-让我们首先解决将选项对象绑定到IoC容器的问题。我们在静态`register()`方法中执行此操作。记住，我们正在动态构建一个模块，模块的属性之一是其提供者列表。所以我们需要做的是将我们的选项对象定义为一个提供者。这将使它可注入到`ConfigService`中，我们将在下一步中利用这一点。在下面的代码中，请注意`providers`数组：
+```typescript
+export interface IdGeneratorModuleOptions {
+  prefix: string;
+}
+
+export const ID_GENERATOR_OPTIONS = 'ID_GENERATOR_OPTIONS';
+
+```
+
+Next, bind the options object to the IoC container in the static `register()` method. We are constructing a module dynamically, and one of the properties of a module is its list of providers, so we define the options object as a provider. Pay attention to the `providers` array:
 
 ```typescript
 import { DynamicModule, Module } from '@nestjs/common';
-import { ConfigService } from './config.service';
+import { IdGenerator } from './id-generator.js';
+import {
+  ID_GENERATOR_OPTIONS,
+  IdGeneratorModuleOptions,
+} from './id-generator.interfaces.js';
 
 @Module({})
-export class ConfigModule {
-  static register(options: Record<string, any>): DynamicModule {
+export class IdGeneratorModule {
+  static register(options: IdGeneratorModuleOptions): DynamicModule {
     return {
-      module: ConfigModule,
+      module: IdGeneratorModule,
       providers: [
         {
-          provide: 'CONFIG_OPTIONS',
+          provide: ID_GENERATOR_OPTIONS,
           useValue: options,
         },
-        ConfigService,
+        IdGenerator,
       ],
-      exports: [ConfigService],
+      exports: [IdGenerator],
     };
   }
 }
 
 ```
 
-现在我们可以通过将`'CONFIG_OPTIONS'`提供者注入到`ConfigService`中来完成这个过程。回想一下，当我们使用非类令牌定义提供者时，我们需要使用`@Inject()`装饰器[如这里所述](/fundamentals/dependency-injection#非基于类的提供者令牌)。
+Now inject the options into `IdGenerator`. A provider registered with a non-class token is injected with the `@Inject()` decorator, as described in [Non-class-based provider tokens](/fundamentals/custom-providers#non-class-based-provider-tokens):
 
 ```typescript
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import * as dotenv from 'dotenv';
-import { Injectable, Inject } from '@nestjs/common';
-import { EnvConfig } from './interfaces';
+import { Inject, Injectable } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
+import {
+  ID_GENERATOR_OPTIONS,
+  type IdGeneratorModuleOptions,
+} from './id-generator.interfaces.js';
 
 @Injectable()
-export class ConfigService {
-  private readonly envConfig: EnvConfig;
+export class IdGenerator {
+  constructor(
+    @Inject(ID_GENERATOR_OPTIONS)
+    private readonly options: IdGeneratorModuleOptions,
+  ) {}
 
-  constructor(@Inject('CONFIG_OPTIONS') private options: Record<string, any>) {
-    const filePath = `${process.env.NODE_ENV || 'development'}.env`;
-    const envFile = path.resolve(__dirname, '../../', options.folder, filePath);
-    this.envConfig = dotenv.parse(fs.readFileSync(envFile));
-  }
-
-  get(key: string): string {
-    return this.envConfig[key];
+  generate(): string {
+    return `${this.options.prefix}_${randomUUID()}`;
   }
 }
 
 ```
 
-最后一个注意事项：为了简单起见，我们上面使用了基于字符串的注入令牌（`'CONFIG_OPTIONS'`），但最佳实践是在单独的文件中将其定义为常量（或`Symbol`），并导入该文件。例如：
+With that in place, each consuming module configures its own generator:
 
 ```typescript
-export const CONFIG_OPTIONS = 'CONFIG_OPTIONS';
+@Module({
+  imports: [IdGeneratorModule.register({ prefix: 'usr' })],
+  providers: [UsersService],
+})
+export class UsersModule {}
+
+@Module({
+  imports: [IdGeneratorModule.register({ prefix: 'ord' })],
+  providers: [OrdersService],
+})
+export class OrdersModule {}
 
 ```
 
-#### 示例
+`UsersService` and `OrdersService` both inject `IdGenerator`, but each receives its own instance, configured by the module that imported it: user identifiers start with `usr_`, and order identifiers with `ord_`.
 
-本章中代码的完整示例可以在[这里](https://github.com/nestjs/nest/tree/master/sample/25-dynamic-modules)找到。
+A working example is available in the [dynamic modules sample](https://github.com/nestjs/nest/tree/master/sample/25-dynamic-modules) on GitHub.
 
-#### 社区指南
+#### Community guidelines
 
-你可能已经看到在一些`@nestjs/`包中使用了像`forRoot`、`register`和`forFeature`这样的方法，并且可能想知道所有这些方法的区别是什么。关于这一点没有硬性规定，但`@nestjs/`包尝试遵循以下指南：
+You may have seen methods like `forRoot()`, `register()`, and `forFeature()` in some of the `@nestjs/` packages, and wondered how they differ. There is no hard rule, but the `@nestjs/` packages follow these guidelines:
 
-创建具有以下方法的模块时：
+- `register()` configures a dynamic module for use only by the calling module, as our `IdGeneratorModule` does. For example, with `@nestjs/http-client`, `HttpClientModule.register({{ '{' }} baseUrl: 'someUrl' {{ '}' }})` configures an HTTP client for the calling module. Another module can call `HttpClientModule.register({{ '{' }} baseUrl: 'somewhere else' {{ '}' }})` to get a differently configured client. You can do this in as many modules as you want.
+- `forRoot()` configures a dynamic module once and reuses that configuration in multiple places (possibly without the consumers being aware of it). This is why an application has one `GraphQLModule.forRoot()`, one `TypeOrmModule.forRoot()`, and so on.
+- `forFeature()` uses the configuration set up by `forRoot()`, but modifies some of it for the needs of the calling module (e.g., which repositories the module has access to, or the context a logger should use).
 
-- `register`，你期望用特定的配置配置一个动态模块，仅供调用模块使用。例如，对于Nest的`@nestjs/axios`：`HttpModule.register({ baseUrl: 'someUrl' })`。如果在另一个模块中使用`HttpModule.register({ baseUrl: 'somewhere else' })`，它将具有不同的配置。你可以为任意数量的模块执行此操作。
+Each of these usually has an asynchronous counterpart, `registerAsync()`, `forRootAsync()`, and `forFeatureAsync()`, which means the same thing, but resolves the configuration through Nest's dependency injection.
 
-- `forRoot`，你期望配置动态模块一次，并在多个地方重用该配置（尽管可能在不知不觉中，因为它被抽象掉了）。这就是为什么你有一个`GraphQLModule.forRoot()`，一个`TypeOrmModule.forRoot()`等。
+#### Configurable module builder
 
-- `forFeature`，你期望使用动态模块的`forRoot`配置，但需要修改一些特定于调用模块需求的配置（即该模块应该可以访问哪个存储库，或者日志器应该使用的上下文）。
+Manually creating highly configurable dynamic modules that also expose asynchronous methods (`registerAsync()`, `forRootAsync()`, etc.) is complicated, especially for newcomers. To simplify this, Nest provides the `ConfigurableModuleBuilder` class, which constructs a module "blueprint" in a few lines of code.
 
-所有这些通常也有它们的`async`对应物，`registerAsync`、`forRootAsync`和`forFeatureAsync`，它们意味着相同的事情，但也使用Nest的依赖注入进行配置。
+As an example, let's convert the `IdGeneratorModule` above to use the `ConfigurableModuleBuilder`. It keeps the `IdGeneratorModuleOptions` interface, but the builder generates the injection token, so the `ID_GENERATOR_OPTIONS` constant is no longer needed.
 
-#### 可配置模块构建器
-
-由于手动创建高度可配置的动态模块（暴露`async`方法，如`registerAsync`、`forRootAsync`等）相当复杂，尤其是对新手来说，Nest公开了`ConfigurableModuleBuilder`类，该类简化了此过程，并允许你在几行代码中构建模块"蓝图"。
-
-例如，让我们以我们上面使用的示例（`ConfigModule`）为例，并将其转换为使用`ConfigurableModuleBuilder`。在开始之前，让我们确保我们创建了一个专用接口，该接口表示我们的`ConfigModule`接受的选项。
-
-```typescript
-export interface ConfigModuleOptions {
-  folder: string;
-}
-
-```
-
-有了这个，创建一个新的专用文件（与现有的`config.module.ts`文件一起），并将其命名为`config.module-definition.ts`。在这个文件中，让我们利用`ConfigurableModuleBuilder`来构建`ConfigModule`定义。
+Create a new file alongside `id-generator.module.ts`, named `id-generator.module-definition.ts`, and use the `ConfigurableModuleBuilder` to construct the `IdGeneratorModule` definition:
 
 ```typescript
 import { ConfigurableModuleBuilder } from '@nestjs/common';
-import { ConfigModuleOptions } from './interfaces/config-module-options.interface';
+import type { IdGeneratorModuleOptions } from './id-generator.interfaces.js';
 
 export const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN } =
-  new ConfigurableModuleBuilder<ConfigModuleOptions>().build();
-
-export const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN } =
-  new ConfigurableModuleBuilder().build();
+  new ConfigurableModuleBuilder<IdGeneratorModuleOptions>().build();
 
 ```
 
-现在让我们打开`config.module.ts`文件，并修改其实现以利用自动生成的`ConfigurableModuleClass`：
+Next, change `id-generator.module.ts` to extend the generated `ConfigurableModuleClass`:
 
 ```typescript
 import { Module } from '@nestjs/common';
-import { ConfigService } from './config.service';
-import { ConfigurableModuleClass } from './config.module-definition';
+import { IdGenerator } from './id-generator.js';
+import { ConfigurableModuleClass } from './id-generator.module-definition.js';
 
 @Module({
-  providers: [ConfigService],
-  exports: [ConfigService],
+  providers: [IdGenerator],
+  exports: [IdGenerator],
 })
-export class ConfigModule extends ConfigurableModuleClass {}
+export class IdGeneratorModule extends ConfigurableModuleClass {}
 
 ```
 
-扩展`ConfigurableModuleClass`意味着`ConfigModule`现在不仅提供`register`方法（如之前的自定义实现），还提供`registerAsync`方法，该方法允许消费者异步配置该模块，例如，通过提供异步工厂：
+As with any dynamic module, the metadata returned by the generated methods extends the metadata in the `@Module()` decorator, so `IdGenerator` is provided and exported alongside the generated options provider.
+
+Finally, update `IdGenerator` to inject the generated options provider instead of the `ID_GENERATOR_OPTIONS` token:
 
 ```typescript
-@Module({
-  imports: [
-    ConfigModule.register({ folder: './config' }),
-    // 或者另外：
-    // ConfigModule.registerAsync({
-    //   useFactory: () => {
-    //     return {
-    //       folder: './config',
-    //     }
-    //   },
-    //   inject: [...任何额外的依赖...]
-    // }),
-  ],
-})
-export class AppModule {}
+import { Inject, Injectable } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
+import type { IdGeneratorModuleOptions } from './id-generator.interfaces.js';
+import { MODULE_OPTIONS_TOKEN } from './id-generator.module-definition.js';
+
+@Injectable()
+export class IdGenerator {
+  constructor(
+    @Inject(MODULE_OPTIONS_TOKEN)
+    private readonly options: IdGeneratorModuleOptions,
+  ) {}
+
+  generate(): string {
+    return `${this.options.prefix}_${randomUUID()}`;
+  }
+}
 
 ```
 
-`registerAsync`方法将以下对象作为参数：
+Extending `ConfigurableModuleClass` gives `IdGeneratorModule` not only the `register()` method (as the manual implementation did), but also `registerAsync()`, which lets consumers configure the module asynchronously. For example, the following factory reads the prefix with the `ConfigService` from [`@nestjs/config`](/application/configuration):
+
+```typescript
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { IdGeneratorModule } from '../id-generator/id-generator.module.js';
+import { UsersService } from './users.service.js';
+
+@Module({
+  imports: [
+    IdGeneratorModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        prefix: configService.getOrThrow<string>('USER_ID_PREFIX'),
+      }),
+      inject: [ConfigService],
+    }),
+  ],
+  providers: [UsersService],
+})
+export class UsersModule {}
+
+```
+
+The `registerAsync()` method takes an object with the following properties:
 
 ```typescript
 {
   /**
-   * 解析为将被实例化为提供者的类的注入令牌。
-   * 该类必须实现相应的接口。
+   * Modules whose exported providers the factory, class, or existing
+   * provider depends on.
+   */
+  imports?: ModuleMetadata['imports'];
+  /**
+   * Function returning options (or a Promise resolving to options) to configure the
+   * module.
+   */
+  useFactory?: (...args: any[]) => Promise<ModuleOptions> | ModuleOptions;
+  /**
+   * Dependencies that a Factory may inject.
+   */
+  inject?: FactoryProvider['inject'];
+  /**
+   * Injection token resolving to a class that will be instantiated as a provider.
+   * The class must implement the corresponding interface.
    */
   useClass?: Type<
     ConfigurableModuleOptionsFactory<ModuleOptions, FactoryClassMethodKey>
   >;
   /**
-   * 返回选项（或解析为选项的Promise）以配置模块的函数。
-   */
-  useFactory?: (...args: any[]) => Promise<ModuleOptions> | ModuleOptions;
-  /**
-   * 工厂可能注入的依赖项。
-   */
-  inject?: FactoryProvider['inject'];
-  /**
-   * 解析为现有提供者的注入令牌。该提供者必须实现
-   * 相应的接口。
+   * Injection token resolving to an existing provider. The provider must implement
+   * the corresponding interface.
    */
   useExisting?: Type<
     ConfigurableModuleOptionsFactory<ModuleOptions, FactoryClassMethodKey>
   >;
+  /**
+   * List of parent module's providers that will be filtered to only provide necessary
+   * providers for the 'inject' array.
+   */
+  provideInjectionTokensFrom?: Provider[];
 }
 
 ```
 
-让我们逐一查看上述属性：
+Let's go through these properties one by one:
 
-- `useFactory` - 返回配置对象的函数。它可以是同步的或异步的。要将依赖项注入到工厂函数中，请使用`inject`属性。我们在上面的示例中使用了这个变体。
-- `inject` - 将被注入到工厂函数中的依赖项数组。依赖项的顺序必须与工厂函数中参数的顺序匹配。
-- `useClass` - 将被实例化为提供者的类。该类必须实现相应的接口。通常，这是一个提供`create()`方法的类，该方法返回配置对象。在下面的[自定义方法键](/fundamentals/dynamic-modules#自定义方法键)部分中了解更多信息。
-- `useExisting` - `useClass`的一个变体，允许你使用现有的提供者，而不是指示Nest创建该类的新实例。当你想使用已经在模块中注册的提供者时，这很有用。请记住，该类必须实现与`useClass`中使用的相同接口（因此它必须提供`create()`方法，除非你覆盖默认方法名称，请参阅下面的[自定义方法键](/fundamentals/dynamic-modules#自定义方法键)部分）。
+- `imports` - modules to import into the dynamic module, so that the factory, class, or existing provider can inject their exported providers. The example above imports `ConfigModule` to inject `ConfigService`.
+- `useFactory` - a function that returns the options object. It can be either synchronous or asynchronous. To inject dependencies into the factory function, use the `inject` property. The example above uses this variant.
+- `inject` - an array of dependencies to inject into the factory function. The order of the dependencies must match the order of the factory function's parameters.
+- `useClass` - a class to instantiate as a provider. The class must implement the corresponding interface, which by default means providing a `create()` method that returns the options object. See [Custom options factory class](#custom-options-factory-class) below.
+- `useExisting` - a variant of `useClass` that reuses an existing provider instead of instructing Nest to create a new instance of the class. The provider must implement the same interface as a `useClass` class (and so must provide the `create()` method, unless you change the method name, as described in [Custom options factory class](#custom-options-factory-class) below).
+- `provideInjectionTokensFrom` - used together with `useFactory` (or `useExisting`) and `inject`: a list of providers from which Nest picks the ones listed in `inject` and registers them in the dynamic module. This is useful when a module passes its own options on to a nested module that it configures asynchronously.
 
-始终选择上述选项之一（`useFactory`、`useClass`或`useExisting`），因为它们是互斥的。
+Always choose exactly one of `useFactory`, `useClass`, and `useExisting`, as they are mutually exclusive.
 
-最后，让我们更新`ConfigService`类，以注入生成的模块选项的提供者，而不是我们到目前为止使用的`'CONFIG_OPTIONS'`。
+#### Custom method key
 
-```typescript
-@Injectable()
-export class ConfigService {
-  constructor(@Inject(MODULE_OPTIONS_TOKEN) private options: ConfigModuleOptions) { ... }
-}
-
-```
-
-#### 自定义方法键
-
-`ConfigurableModuleClass`默认提供`register`及其对应物`registerAsync`方法。要使用不同的方法名称，请使用`ConfigurableModuleBuilder#setClassMethodName`方法，如下所示：
+By default, `ConfigurableModuleClass` provides the `register()` method and its `registerAsync()` counterpart. To use a different method name, use the `ConfigurableModuleBuilder#setClassMethodName` method. For example, if your module is meant to be configured once for the entire application, the [community guidelines](#community-guidelines) suggest `forRoot()`:
 
 ```typescript
 export const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN } =
-  new ConfigurableModuleBuilder<ConfigModuleOptions>().setClassMethodName('forRoot').build();
+  new ConfigurableModuleBuilder<IdGeneratorModuleOptions>()
+    .setClassMethodName('forRoot')
+    .build();
 
 ```
 
-这种构造将指示`ConfigurableModuleBuilder`生成一个公开`forRoot`和`forRootAsync`的类，而不是`register`和`registerAsync`。示例：
+This instructs `ConfigurableModuleBuilder` to generate a class that exposes `forRoot()` and `forRootAsync()` instead:
 
 ```typescript
 @Module({
   imports: [
-    ConfigModule.forRoot({ folder: './config' }), // <-- 注意使用 "forRoot" 而不是 "register"
-    // 或者另外：
-    // ConfigModule.forRootAsync({
-    //   useFactory: () => {
-    //     return {
-    //       folder: './config',
-    //     }
-    //   },
-    //   inject: [...任何额外的依赖...]
+    IdGeneratorModule.forRoot({ prefix: 'id' }), // <-- note "forRoot" instead of "register"
+    // or alternatively:
+    // IdGeneratorModule.forRootAsync({
+    //   useFactory: () => ({ prefix: 'id' }),
+    //   inject: [...any extra dependencies...],
     // }),
   ],
 })
@@ -440,56 +434,75 @@ export class AppModule {}
 
 ```
 
-#### 自定义选项工厂类
+#### Custom options factory class
 
-由于`registerAsync`方法（或`forRootAsync`或任何其他名称，取决于配置）允许消费者传递解析为模块配置的提供者定义，库消费者可能会提供一个类来用于构造配置对象。
-
-```typescript
-@Module({
-  imports: [
-    ConfigModule.registerAsync({
-      useClass: ConfigModuleOptionsFactory,
-    }),
-  ],
-})
-export class AppModule {}
-
-```
-
-默认情况下，此类必须提供`create()`方法，该方法返回模块配置对象。但是，如果你的库遵循不同的命名约定，你可以更改该行为，并指示`ConfigurableModuleBuilder`期望一个不同的方法，例如`createConfigOptions`，使用`ConfigurableModuleBuilder#setFactoryMethodName`方法：
-
-```typescript
-export const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN } =
-  new ConfigurableModuleBuilder<ConfigModuleOptions>().setFactoryMethodName('createConfigOptions').build();
-
-```
-
-现在，`ConfigModuleOptionsFactory`类必须公开`createConfigOptions`方法（而不是`create`）：
+Because the `registerAsync()` method (or `forRootAsync()`, or any other name, depending on the configuration) lets consumers pass a provider definition that resolves to the module options, a consumer can also supply a class that constructs the options object:
 
 ```typescript
 @Module({
   imports: [
-    ConfigModule.registerAsync({
-      useClass: ConfigModuleOptionsFactory, // <-- 此类必须提供 "createConfigOptions" 方法
+    IdGeneratorModule.registerAsync({
+      useClass: IdGeneratorConfigService,
     }),
   ],
 })
-export class AppModule {}
+export class UsersModule {}
 
 ```
 
-#### 额外选项
+By default, this class must provide a `create()` method that returns the module options. The `ConfigurableModuleOptionsFactory` interface, exported from `@nestjs/common`, describes this contract:
 
-有些边缘情况，当你的模块可能需要采取额外的选项，决定它应该如何行为（这样的选项的一个很好的例子是`isGlobal`标志 - 或只是`global`），同时，不应该包含在`MODULE_OPTIONS_TOKEN`提供者中（因为它们与该模块内注册的服务/提供者无关，例如，`ConfigService`不需要知道其宿主模块是否注册为全局模块）。
+```typescript
+import { ConfigurableModuleOptionsFactory, Injectable } from '@nestjs/common';
+import type { IdGeneratorModuleOptions } from '../id-generator/id-generator.interfaces.js';
 
-在这种情况下，可以使用`ConfigurableModuleBuilder#setExtras`方法。请参见以下示例：
+@Injectable()
+export class IdGeneratorConfigService
+  implements ConfigurableModuleOptionsFactory<IdGeneratorModuleOptions, 'create'>
+{
+  create(): IdGeneratorModuleOptions {
+    return { prefix: 'usr' };
+  }
+}
+
+```
+
+If your library follows a different naming convention, instruct `ConfigurableModuleBuilder` to expect a different method, for example, `createIdGeneratorOptions`, with the `ConfigurableModuleBuilder#setFactoryMethodName` method:
 
 ```typescript
 export const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN } =
-  new ConfigurableModuleBuilder<ConfigModuleOptions>()
+  new ConfigurableModuleBuilder<IdGeneratorModuleOptions>()
+    .setFactoryMethodName('createIdGeneratorOptions')
+    .build();
+
+```
+
+Now the `IdGeneratorConfigService` class must expose the `createIdGeneratorOptions()` method instead of `create()`:
+
+```typescript
+@Module({
+  imports: [
+    IdGeneratorModule.registerAsync({
+      useClass: IdGeneratorConfigService, // <-- this class must provide the "createIdGeneratorOptions" method
+    }),
+  ],
+})
+export class UsersModule {}
+
+```
+
+#### Extra options
+
+In some cases, a module needs extra options that determine how it behaves, but that shouldn't be included in the `MODULE_OPTIONS_TOKEN` provider, because they are irrelevant to the providers registered within the module. A good example is an `isGlobal` flag: `IdGenerator` doesn't need to know whether its host module is registered as a global module.
+
+For such options, use the `ConfigurableModuleBuilder#setExtras` method:
+
+```typescript
+export const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN } =
+  new ConfigurableModuleBuilder<IdGeneratorModuleOptions>()
     .setExtras(
       {
-        isGlobal: true,
+        isGlobal: false,
       },
       (definition, extras) => ({
         ...definition,
@@ -500,16 +513,16 @@ export const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN } =
 
 ```
 
-在上面的示例中，传递给`setExtras`方法的第一个参数是一个对象，包含"额外"属性的默认值。第二个参数是一个函数，它接受自动生成的模块定义（带有`provider`、`exports`等）和`extras`对象，该对象表示额外的属性（由消费者指定或默认值）。此函数的返回值是修改后的模块定义。在这个特定的例子中，我们将`extras.isGlobal`属性分配给模块定义的`global`属性（这反过来决定模块是否是全局的，更多信息[这里](/modules#动态模块)）。
+The first argument passed to the `setExtras` method is an object with the default values of the extra properties. The second argument is a function that receives the auto-generated module definition (with `providers`, `exports`, etc.) and the `extras` object, which holds the extra properties (either specified by the consumer or the defaults). The function returns the modified module definition. In this example, the `extras.isGlobal` property is assigned to the `global` property of the module definition, which determines whether the module is global (see [Dynamic modules](/modules#dynamic-modules) in the Modules chapter).
 
-现在，当消费此模块时，可以传递额外的`isGlobal`标志，如下所示：
+Now, when importing this module, consumers can pass the additional `isGlobal` flag. For example, an application that uses one prefix for all of its identifiers can register the module once, globally:
 
 ```typescript
 @Module({
   imports: [
-    ConfigModule.register({
+    IdGeneratorModule.register({
       isGlobal: true,
-      folder: './config',
+      prefix: 'id',
     }),
   ],
 })
@@ -517,49 +530,50 @@ export class AppModule {}
 
 ```
 
-然而，由于`isGlobal`被声明为"额外"属性，它将不会在`MODULE_OPTIONS_TOKEN`提供者中可用：
+However, since `isGlobal` is declared as an extra property, it isn't part of the options object provided by `MODULE_OPTIONS_TOKEN`:
 
 ```typescript
 @Injectable()
-export class ConfigService {
+export class IdGenerator {
   constructor(
-    @Inject(MODULE_OPTIONS_TOKEN) private options: ConfigModuleOptions,
+    @Inject(MODULE_OPTIONS_TOKEN)
+    private readonly options: IdGeneratorModuleOptions,
   ) {
-    // "options" 对象将不会有 "isGlobal" 属性
+    // "options" object will not have the "isGlobal" property
     // ...
   }
 }
 
 ```
 
-#### 扩展自动生成的方法
+#### Extending auto-generated methods
 
-如果需要，可以扩展自动生成的静态方法（`register`、`registerAsync`等），如下所示：
+The auto-generated static methods (`register()`, `registerAsync()`, etc.) can be extended if needed, as follows:
 
 ```typescript
-import { Module } from '@nestjs/common';
-import { ConfigService } from './config.service';
+import { DynamicModule, Module } from '@nestjs/common';
+import { IdGenerator } from './id-generator.js';
 import {
-  ConfigurableModuleClass,
   ASYNC_OPTIONS_TYPE,
+  ConfigurableModuleClass,
   OPTIONS_TYPE,
-} from './config.module-definition';
+} from './id-generator.module-definition.js';
 
 @Module({
-  providers: [ConfigService],
-  exports: [ConfigService],
+  providers: [IdGenerator],
+  exports: [IdGenerator],
 })
-export class ConfigModule extends ConfigurableModuleClass {
+export class IdGeneratorModule extends ConfigurableModuleClass {
   static register(options: typeof OPTIONS_TYPE): DynamicModule {
     return {
-      // 你的自定义逻辑在这里
+      // your custom logic here
       ...super.register(options),
     };
   }
 
   static registerAsync(options: typeof ASYNC_OPTIONS_TYPE): DynamicModule {
     return {
-      // 你的自定义逻辑在这里
+      // your custom logic here
       ...super.registerAsync(options),
     };
   }
@@ -567,7 +581,7 @@ export class ConfigModule extends ConfigurableModuleClass {
 
 ```
 
-请注意使用`OPTIONS_TYPE`和`ASYNC_OPTIONS_TYPE`类型，这些类型必须从模块定义文件中导出：
+Note the `OPTIONS_TYPE` and `ASYNC_OPTIONS_TYPE` types, which must be exported from the module definition file:
 
 ```typescript
 export const {
@@ -575,6 +589,6 @@ export const {
   MODULE_OPTIONS_TOKEN,
   OPTIONS_TYPE,
   ASYNC_OPTIONS_TYPE,
-} = new ConfigurableModuleBuilder<ConfigModuleOptions>().build();
+} = new ConfigurableModuleBuilder<IdGeneratorModuleOptions>().build();
 
 ```
