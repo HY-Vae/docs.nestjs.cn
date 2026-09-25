@@ -1,14 +1,16 @@
-### 守卫
+<!-- 此文件从 content/microservices/guards.md 自动生成，请勿直接修改此文件 -->
+<!-- 生成时间: 2026-09-25T07:10:07.205Z -->
+<!-- 源文件: content/microservices/guards.md -->
 
-微服务守卫与[常规 HTTP 应用守卫](/overview/guards)没有本质区别。唯一的不同在于，你应该使用 `RpcException` 而不是抛出 `HttpException`。
+### Guards
 
-:::info 注意
-`RpcException` 类是从 `@nestjs/microservices` 包中导出的。
-:::
+Microservice guards work the same way as [regular HTTP application guards](/guards). The only difference is that they should throw `RpcException` instead of `HttpException`. When a guard returns `false`, Nest throws an `RpcException` with the `Forbidden resource` message.
 
-#### 绑定守卫
+> info **Hint** The `RpcException` class is exposed from the `@nestjs/microservices` package.
 
-以下示例使用了一个方法作用域的守卫。与基于 HTTP 的应用一样，你也可以使用控制器作用域的守卫（即在控制器类前添加 `@UseGuards()` 装饰器）。
+#### Binding guards
+
+The following example uses a method-scoped guard. As with HTTP-based applications, you can also use controller-scoped guards (i.e., prefix the controller class with a `@UseGuards()` decorator).
 
 ```typescript
 @UseGuards(AuthGuard)
@@ -18,3 +20,5 @@ accumulate(data: number[]): number {
 }
 
 ```
+
+> info **Hint** Global guards registered on the main HTTP application don't apply to microservices connected to a [hybrid application](/faq/hybrid-application) unless you set the `inheritAppConfig` option. See [sharing configuration](/faq/hybrid-application#sharing-configuration).

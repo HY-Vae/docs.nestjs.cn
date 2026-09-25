@@ -1,27 +1,25 @@
 <!-- 此文件从 content/recipes/swc.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-03-12T13:42:20.324Z -->
+<!-- 生成时间: 2026-09-25T07:10:07.186Z -->
 <!-- 源文件: content/recipes/swc.md -->
 
 ### SWC
 
-[SWC](https://swc.rs/)（Speedy Web Compiler）是一个基于 Rust 的可扩展平台，可用于编译和打包。在 Nest CLI 中使用 SWC 是显著加快开发过程的好方法。
+[SWC](https://swc.rs/) (Speedy Web Compiler) is an extensible Rust-based platform that can be used for both compilation and bundling. Using SWC with the Nest CLI is a straightforward way to significantly speed up your development process.
 
-:::info 提示
-SWC 比默认的 TypeScript 编译器快约 **20 倍**。
-:::
+> info **Hint** SWC is approximately **20 times faster** than the default TypeScript compiler.
 
-#### 安装
+#### Installation
 
-首先，安装几个包：
+To get started, first install a few packages:
 
 ```bash
 $ npm i --save-dev @swc/cli @swc/core
 
 ```
 
-#### 入门
+#### Getting started
 
-安装完成后，你可以在 Nest CLI 中使用 `swc` 构建器，如下所示：
+Once the installation is complete, you can use the `swc` builder with the Nest CLI, as follows:
 
 ```bash
 $ nest start -b swc
@@ -29,11 +27,9 @@ $ nest start -b swc
 
 ```
 
-:::info 提示
-如果你的仓库是 monorepo，请查看[本节](/recipes/swc#monorepo)。
-:::
+> info **Hint** If your repository is a monorepo, see the [Monorepo](/recipes/swc#monorepo) section.
 
-除了传递 `-b` 标志外，你还可以在 `nest-cli.json` 文件中将 `compilerOptions.builder` 属性设置为 `"swc"`，如下所示：
+Instead of passing the `-b` flag, you can set the `compilerOptions.builder` property to `"swc"` in your `nest-cli.json` file:
 
 ```json
 {
@@ -44,7 +40,7 @@ $ nest start -b swc
 
 ```
 
-要自定义构建器的行为，你可以传递一个包含两个属性的对象，`type`（`"swc"`）和 `options`，如下所示：
+To customize the builder's behavior, pass an object containing two attributes, `type` (`"swc"`) and `options`, as follows:
 
 ```json
 {
@@ -60,7 +56,7 @@ $ nest start -b swc
 
 ```
 
-例如，要让 swc 编译 `.jsx` 和 `.tsx` 文件，请执行：
+For example, to make SWC compile `.jsx` and `.tsx` files, use the following configuration:
 
 ```json
 {
@@ -74,7 +70,7 @@ $ nest start -b swc
 
 ```
 
-要在监视模式下运行应用程序，请使用以下命令：
+To run the application in watch mode, use the following command:
 
 ```bash
 $ nest start -b swc -w
@@ -82,16 +78,16 @@ $ nest start -b swc -w
 
 ```
 
-#### 类型检查
+#### Type checking
 
-SWC 本身不执行任何类型检查（与默认的 TypeScript 编译器相反），因此要启用它，你需要使用 `--type-check` 标志：
+Unlike the default TypeScript compiler, SWC doesn't perform any type checking itself. To turn type checking on, use the `--type-check` flag:
 
 ```bash
 $ nest start -b swc --type-check
 
 ```
 
-此命令将指示 Nest CLI 在 `noEmit` 模式下与 SWC 一起运行 `tsc`，这将异步执行类型检查。同样，除了传递 `--type-check` 标志外，你还可以在 `nest-cli.json` 文件中将 `compilerOptions.typeCheck` 属性设置为 `true`，如下所示：
+This command instructs the Nest CLI to run `tsc` in `noEmit` mode alongside SWC, which performs type checking asynchronously. Instead of passing the `--type-check` flag, you can also set the `compilerOptions.typeCheck` property to `true` in your `nest-cli.json` file:
 
 ```json
 {
@@ -103,13 +99,13 @@ $ nest start -b swc --type-check
 
 ```
 
-#### CLI 插件 (SWC)
+#### CLI Plugins (SWC)
 
-`--type-check` 标志将自动执行 **NestJS CLI 插件**并生成一个序列化的元数据文件，然后应用程序可以在运行时加载该文件。
+The `--type-check` flag automatically executes **NestJS CLI plugins** and produces a serialized metadata file, which the application can then load at runtime.
 
-#### SWC 配置
+#### SWC configuration
 
-SWC 构建器已预先配置为满足 NestJS 应用程序的要求。但是，你可以通过在根目录中创建 `.swcrc` 文件并根据需要调整选项来自定义配置。
+The SWC builder is preconfigured to match the requirements of NestJS applications. However, you can customize the configuration by creating a `.swcrc` file in the root directory and adjusting the options as needed:
 
 ```json
 {
@@ -128,18 +124,22 @@ SWC 构建器已预先配置为满足 NestJS 应用程序的要求。但是，�
 
 ```
 
+> info **Hint** The SWC builder emits the same module format as the TypeScript compiler would: ES modules when your `package.json` file sets `"type": "module"` (the default for new projects), and CommonJS otherwise. A `module` setting in `.swcrc` overrides this.
+
 #### Monorepo
 
-如果你的仓库是 monorepo，那么你需要配置 `webpack` 以使用 `swc-loader`，而不是使用 `swc` 构建器。
+> info **Hint** As of NestJS v12, monorepos use the Rspack builder by default, which already compiles your code with SWC (through Rspack's built-in `swc-loader`). The following setup applies only if you use the deprecated webpack builder.
 
-首先，让我们安装所需的包：
+If your repository is a monorepo, then instead of using the `swc` builder, you have to configure `webpack` to use `swc-loader`.
+
+First, install the required package:
 
 ```bash
 $ npm i --save-dev swc-loader
 
 ```
 
-安装完成后，在应用程序的根目录中创建一个 `webpack.config.js` 文件，内容如下：
+Once the installation is complete, create a `webpack.config.js` file in the root directory of your application with the following content:
 
 ```js
 const swcDefaultConfig = require('@nestjs/cli/lib/compiler/defaults/swc-defaults').swcDefaultsFactory().swcOptions;
@@ -161,40 +161,38 @@ module.exports = {
 
 ```
 
-#### Monorepo 和 CLI 插件
+#### Monorepo and CLI plugins
 
-现在如果你使用 CLI 插件，`swc-loader` 不会自动加载它们。相反，你必须创建一个单独的文件来手动加载它们。为此，在 `main.ts` 文件附近声明一个 `generate-metadata.ts` 文件，内容如下：
+If you use CLI plugins, `swc-loader` doesn't load them automatically. Instead, you have to create a separate file that loads them manually. To do so, create a `generate-metadata.ts` file next to the `main.ts` file with the following content:
 
 ```ts
-import { PluginMetadataGenerator } from '@nestjs/cli/lib/compiler/plugins/plugin-metadata-generator';
-import { ReadonlyVisitor } from '@nestjs/swagger/dist/plugin';
+import { PluginMetadataGenerator } from '@nestjs/cli/lib/compiler/plugins/plugin-metadata-generator.js';
+import { ReadonlyVisitor } from '@nestjs/swagger/plugin';
 
 const generator = new PluginMetadataGenerator();
 generator.generate({
-  visitors: [new ReadonlyVisitor({ introspectComments: true, pathToSource: __dirname })],
-  outputDir: __dirname,
+  visitors: [new ReadonlyVisitor({ introspectComments: true, pathToSource: import.meta.dirname })],
+  outputDir: import.meta.dirname,
   watch: true,
   tsconfigPath: 'apps/<name>/tsconfig.app.json',
 });
 
 ```
 
-:::info 提示
-在此示例中，我们使用了 `@nestjs/swagger` 插件，但你可以使用你选择的任何插件。
-:::
+> info **Hint** This example uses the `@nestjs/swagger` plugin, but you can use any plugin of your choice.
 
-`generate()` 方法接受以下选项：
+The `generate()` method accepts the following options:
 
 |                    |                                                                                                |
 | ------------------ | ---------------------------------------------------------------------------------------------- |
-| `watch`            | 是否监视项目的更改。                                                      |
-| `tsconfigPath`     | `tsconfig.json` 文件的路径。相对于当前工作目录（`process.cwd()`）。 |
-| `outputDir`        | 保存元数据文件的目录路径。                                   |
-| `visitors`         | 将用于生成元数据的访问者数组。                                   |
-| `filename`         | 元数据文件的名称。默认为 `metadata.ts`。                                      |
-| `printDiagnostics` | 是否将诊断打印到控制台。默认为 `true`。                               |
+| `watch`            | Whether to watch the project for changes.                                                      |
+| `tsconfigPath`     | Path to the `tsconfig.json` file. Relative to the current working directory (`process.cwd()`). |
+| `outputDir`        | Path to the directory where the metadata file is saved.                                        |
+| `visitors`         | An array of visitors used to generate metadata.                                                |
+| `filename`         | The name of the metadata file. Defaults to `metadata.ts`.                                      |
+| `printDiagnostics` | Whether to print diagnostics to the console. Defaults to `true`.                               |
 
-最后，你可以使用以下命令在单独的终端窗口中运行 `generate-metadata` 脚本：
+Finally, run the `generate-metadata` script in a separate terminal window with the following command:
 
 ```bash
 $ npx ts-node src/generate-metadata.ts
@@ -202,37 +200,35 @@ $ npx ts-node src/generate-metadata.ts
 
 ```
 
-#### 常见陷阱
+#### Common pitfalls
 
-如果你在应用程序中使用 TypeORM/MikroORM 或任何其他 ORM，你可能会遇到循环导入问题。SWC 不能很好地处理**循环导入**，因此你应该使用以下解决方法：
+If you use TypeORM, MikroORM, or any other ORM in your application, you may run into circular import issues. SWC doesn't handle **circular imports** well, so use the following workaround:
 
 ```typescript
 @Entity()
 export class User {
   @OneToOne(() => Profile, (profile) => profile.user)
-  profile: Relation<Profile>; // <--- 在这里看到 "Relation<>" 类型，而不是仅仅 "Profile"
+  profile: Relation<Profile>; // <--- see "Relation<>" type here instead of just "Profile"
 }
 
 ```
 
-:::info 提示
-`Relation` 类型从 `typeorm` 包导出。
-:::
+> info **Hint** The `Relation` type is exported from the `typeorm` package.
 
-这样做可以防止属性的类型保存在转译代码的属性元数据中，从而防止循环依赖问题。
+This prevents the property's type from being saved in the property metadata of the transpiled code, which avoids circular dependency issues.
 
-如果你的 ORM 没有提供类似的解决方法，你可以自己定义包装器类型：
+If your ORM does not provide a similar workaround, you can define the wrapper type yourself:
 
 ```typescript
 /**
- * 用于规避 ESM 模块循环依赖问题的包装器类型
- * 由反射元数据保存属性类型引起。
+ * Wrapper type used to circumvent ESM modules circular dependency issue
+ * caused by reflection metadata saving the type of the property.
  */
 export type WrapperType<T> = T; // WrapperType === Relation
 
 ```
 
-对于项目中的所有[循环依赖注入](/fundamentals/circular-dependency)，你还需要使用上述自定义包装器类型：
+For all [circular dependency injections](/fundamentals/circular-dependency) in your project, you also need to use the custom wrapper type described above:
 
 ```typescript
 @Injectable()
@@ -240,21 +236,21 @@ export class UsersService {
   constructor(
     @Inject(forwardRef(() => ProfileService))
     private readonly profileService: WrapperType<ProfileService>,
-  ) {};
+  ) {}
 }
 
 ```
 
 ### Jest + SWC
 
-要在 Jest 中使用 SWC，你需要安装以下包：
+To use SWC with Jest (the default test runner for CommonJS projects), install the following packages:
 
 ```bash
 $ npm i --save-dev jest @swc/core @swc/jest
 
 ```
 
-安装完成后，使用以下内容更新 `package.json`/`jest.config.js` 文件（取决于你的配置）：
+Once the installation is complete, update your `package.json` or `jest.config.js` file (depending on your configuration) with the following content:
 
 ```json
 {
@@ -267,7 +263,7 @@ $ npm i --save-dev jest @swc/core @swc/jest
 
 ```
 
-此外，你需要将以下 `transform` 属性添加到你的 `.swcrc` 文件中：`legacyDecorator`、`decoratorMetadata`：
+Additionally, add the `legacyDecorator` and `decoratorMetadata` `transform` properties to your `.swcrc` file:
 
 ```json
 {
@@ -290,26 +286,27 @@ $ npm i --save-dev jest @swc/core @swc/jest
 
 ```
 
-如果你在项目中使用 NestJS CLI 插件，你将不得不手动运行 `PluginMetadataGenerator`。导航到[本节](/recipes/swc#monorepo-and-cli-plugins)了解更多信息。
+If you use NestJS CLI plugins in your project, you have to run `PluginMetadataGenerator` manually. See the [Monorepo and CLI plugins](/recipes/swc#monorepo-and-cli-plugins) section to learn more.
 
 ### Vitest
 
-[Vitest](https://vitest.dev/) 是一个快速、轻量级的测试运行器，旨在与 Vite 一起使用。它提供了一个现代、快速且易于使用的测试解决方案，可以与 NestJS 项目集成。
+[Vitest](https://vitest.dev/) is a fast, lightweight test runner designed to work with Vite. New NestJS projects that use ES modules (the default) are already set up with Vitest. This section shows how to configure Vitest to build your test files with SWC.
 
-#### 安装
+#### Installation
 
-首先，安装所需的包：
+To get started, first install the required packages:
 
 ```bash
 $ npm i --save-dev vitest unplugin-swc @swc/core @vitest/coverage-v8
 
 ```
 
-#### 配置
+#### Configuration
 
-在应用程序的根目录中创建一个 `vitest.config.ts` 文件，内容如下：
+Create a `vitest.config.ts` file in the root directory of your application with the following content:
 
 ```ts
+import { resolve } from 'node:path';
 import swc from 'unplugin-swc';
 import { defineConfig } from 'vitest/config';
 
@@ -319,23 +316,23 @@ export default defineConfig({
     root: './',
   },
   plugins: [
-    // 这是使用 SWC 构建测试文件所必需的
+    // This is required to build the test files with SWC
     swc.vite({
-      // 显式设置模块类型以避免从 `.swcrc` 配置文件继承此值
+      // Explicitly set the module type to avoid inheriting this value from a `.swcrc` config file
       module: { type: 'es6' },
     }),
   ],
   resolve: {
     alias: {
-      // 确保 Vitest 正确解析 TypeScript 路径别名
-      'src': resolve(__dirname, './src'),
+      // Ensure Vitest correctly resolves TypeScript path aliases
+      'src': resolve(import.meta.dirname, './src'),
     },
   },
 });
 
 ```
 
-此配置文件设置 Vitest 环境、根目录和 SWC 插件。你还应该为 e2e 测试创建一个单独的配置文件，其中包含一个额外的 `include` 字段，用于指定测试路径正则表达式：
+This configuration file sets up the Vitest environment, root directory, and SWC plugin. You should also create a separate configuration file for e2e tests (e.g., `vitest.config.e2e.ts`), with an additional `include` field that specifies the glob pattern for the test files:
 
 ```ts
 import swc from 'unplugin-swc';
@@ -352,7 +349,7 @@ export default defineConfig({
 
 ```
 
-此外，你可以设置 `alias` 选项以支持测试中的 TypeScript 路径：
+Additionally, you can set the `alias` options to support TypeScript paths in your tests:
 
 ```ts
 import swc from 'unplugin-swc';
@@ -379,30 +376,30 @@ export default defineConfig({
 
 ```
 
-### 路径别名
+### Path aliases
 
-与 Jest 不同，Vitest 不会自动解析 TypeScript 路径别名，如 `src/`。这可能导致测试期间的依赖项解析错误。要解决此问题，请在你的 `vitest.config.ts` 文件中添加以下 `resolve.alias` 配置：
+Vitest doesn't automatically resolve TypeScript path aliases such as `src/`, which can lead to dependency resolution errors during testing. To fix this, add the following `resolve.alias` configuration to your `vitest.config.ts` file:
 
 ```ts
-import { resolve } from 'path';
+import { resolve } from 'node:path';
 
 export default defineConfig({
   resolve: {
     alias: {
-      'src': resolve(__dirname, './src'),
+      'src': resolve(import.meta.dirname, './src'),
     },
   },
 });
 
 ```
 
-这确保 Vitest 正确解析模块导入，防止与缺少依赖项相关的错误。
+This ensures that Vitest correctly resolves module imports, preventing errors related to missing dependencies.
 
-#### 更新 E2E 测试中的导入
+#### Update imports in E2E tests
 
-将使用 `import * as request from 'supertest'` 的任何 E2E 测试导入更改为 `import request from 'supertest'`。这是必要的，因为当与 Vite 打包时，Vitest 期望 supertest 的默认导入。在此特定设置中使用命名空间导入可能会导致问题。
+Change any E2E test imports that use `import * as request from 'supertest'` to `import request from 'supertest'`. `supertest` is a CommonJS module that exports a function, and in an ES module setup like Vitest's, a namespace import isn't callable, so you need the default import.
 
-最后，将 package.json 文件中的测试脚本更新为以下内容：
+Lastly, update the test scripts in your `package.json` file:
 
 ```json
 {
@@ -410,17 +407,13 @@ export default defineConfig({
     "test": "vitest run",
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
-    "test:debug": "vitest --inspect-brk --inspect --logHeapUsage --threads=false",
+    "test:debug": "vitest --inspect-brk --no-file-parallelism",
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts"
   }
 }
 
 ```
 
-这些脚本配置 Vitest 以运行测试、监视更改、生成代码覆盖率报告和调试。test:e2e 脚本专门用于使用自定义配置文件运行 E2E 测试。
+These scripts run the tests, watch for changes, generate code coverage reports, and start a debugging session. The `test:e2e` script runs the E2E tests with the dedicated configuration file.
 
-通过此设置，你现在可以在 NestJS 项目中享受使用 Vitest 的好处，包括更快的测试执行和更现代的测试体验。
-
-:::info 提示
-你可以在此[仓库](https://github.com/TrilonIO/nest-vitest)中查看一个可工作的示例
-:::
+> info **Hint** A working example is available in the [nest-vitest repository](https://github.com/TrilonIO/nest-vitest).

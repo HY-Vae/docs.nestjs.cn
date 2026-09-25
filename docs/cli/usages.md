@@ -1,12 +1,12 @@
 <!-- 此文件从 content/cli/usages.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-03-12T13:42:20.320Z -->
+<!-- 生成时间: 2026-09-25T07:10:07.192Z -->
 <!-- 源文件: content/cli/usages.md -->
 
-### CLI 命令参考
+### CLI command reference
 
 #### nest new
 
-创建一个新的（标准模式）Nest 项目。
+Creates a new (standard mode) Nest project.
 
 ```bash
 $ nest new <name> [options]
@@ -14,36 +14,46 @@ $ nest n <name> [options]
 
 ```
 
-##### 描述
+##### Description
 
-创建并初始化一个新的 Nest 项目。提示选择包管理器。
+Creates and initializes a new Nest project. The command prompts for any information you don't pass as an option: the project name, the package manager, the module system (ESM or CommonJS), and whether to set up [NestJS Observe](/observability/overview).
 
-- 创建具有给定 `<name>` 的文件夹
-- 用配置文件填充该文件夹
-- 为源代码（`/src`）和端到端测试（`/test`）创建子文件夹
-- 用应用程序组件和测试的默认文件填充子文件夹
+> info **Hint** In non-interactive environments, such as CI, pass the project name and `--package-manager`. The module system then defaults to ESM, and Observe is set up only if you pass `--observe`.
 
-##### 参数
+> info **Hint** Choosing **ESM** scaffolds an ESM-first project that uses Vitest for testing. Choosing **CommonJS** scaffolds the traditional layout, which uses Jest. Both variants use oxlint for linting.
 
-| 参数 | 描述 |
-| --- | --- |
-| `<name>` | 新项目的名称 |
+The command:
 
-##### 选项
+- Creates a folder with the given `<name>`
+- Populates the folder with configuration files
+- Creates subfolders for source code (`/src`) and end-to-end tests (`/test`)
+- Populates the subfolders with default files for application components and tests
 
-| 选项 | 描述 |
-| --- | --- |
-| `--dry-run` | 报告将进行的更改，但不更改文件系统。<br/> 别名：`-d` |
-| `--skip-git` | 跳过 git 仓库初始化。<br/> 别名：`-g` |
-| `--skip-install` | 跳过包安装。<br/> 别名：`-s` |
-| `--package-manager [package-manager]` | 指定包管理器。使用 `npm`、`yarn` 或 `pnpm`。包管理器必须全局安装。<br/> 别名：`-p` |
-| `--language [language]` | 指定编程语言（`TS` 或 `JS`）。<br/> 别名：`-l` |
-| `--collection [collectionName]` | 指定原理集合。使用包含原理的已安装 npm 包的包名。<br/> 别名：`-c` |
-| `--strict` | 启动项目时启用以下 TypeScript 编译器标志：`strictNullChecks`、`noImplicitAny`、`strictBindCallApply`、`forceConsistentCasingInFileNames`、`noFallthroughCasesInSwitch` |
+##### Arguments
+
+| Argument | Description                 |
+| -------- | --------------------------- |
+| `<name>` | The name of the new project |
+
+##### Options
+
+| Option                                | Description                                                                                                                                                                                                                                                   |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--directory [directory]`             | Destination directory.                                                                                                                                                                                                                                        |
+| `--dry-run`                           | Report the changes that would be made, without changing the filesystem.<br/> Alias: `-d`                                                                                                                                                                      |
+| `--skip-git`                          | Skip git repository initialization.<br/> Alias: `-g`                                                                                                                                                                                                          |
+| `--skip-install`                      | Skip package installation.<br/> Alias: `-s`                                                                                                                                                                                                                   |
+| `--skip-tests`                        | Skip generating test files for the new project.<br/> Alias: `-t`                                                                                                                                                                                              |
+| `--package-manager [package-manager]` | Package manager to use: `npm`, `yarn`, `pnpm`, or `bun`. The package manager must be installed globally.<br/> Alias: `-p`                                                                                                                                      |
+| `--language [language]`               | Programming language: `TS` (default) or `JS`. The value is case-insensitive, and `typescript` / `javascript` are also accepted.<br/> Alias: `-l`                                                                                                                |
+| `--collection [collectionName]`       | Schematics collection to use. Pass the package name of an installed npm package that contains the schematic.<br/> Alias: `-c`                                                                                                                                 |
+| `--strict`                            | Enable TypeScript's `strict` mode (with `strictPropertyInitialization` disabled) in the generated `tsconfig.json`. Enabled by default, and there is no flag to disable it: to opt out, set `"strict": false` in `tsconfig.json` after generating the project. |
+| `--format`                            | Format generated files using Prettier.                                                                                                                                                                                                                        |
+| `--observe` / `--no-observe`          | Set up the `@nestjs/observe` SDK, or skip it, without being prompted. Omit both to be prompted in an interactive terminal (the prompt defaults to yes). Without a terminal, Observe is not set up.                                                            |
 
 #### nest generate
 
-根据原理生成和/或修改文件
+Generates and/or modifies files based on a schematic.
 
 ```bash
 $ nest generate <schematic> <name> [options]
@@ -51,135 +61,225 @@ $ nest g <schematic> <name> [options]
 
 ```
 
-##### 参数
+##### Arguments
 
-| 参数 | 描述 |
-| --- | --- |
-| `<schematic>` | 要生成的 `schematic` 或 `collection:schematic`。有关可用的原理，请参见下表。 |
-| `<name>` | 生成的组件的名称。 |
+| Argument      | Description                                                                                              |
+| ------------- | -------------------------------------------------------------------------------------------------------- |
+| `<schematic>` | The `schematic` or `collection:schematic` to generate. See the table below for the available schematics. |
+| `<name>`      | The name of the generated component. If omitted, the schematic prompts for it.                           |
 
-##### 原理
+##### Schematics
 
-| 名称 | 别名 | 描述 |
-| --- | --- | --- |
-| `app` | | 在 monorepo 中生成新应用程序（如果是标准结构，则转换为 monorepo）。 |
-| `library` | `lib` | 在 monorepo 中生成新库（如果是标准结构，则转换为 monorepo）。 |
-| `class` | `cl` | 生成新类。 |
-| `controller` | `co` | 生成控制器声明。 |
-| `decorator` | `d` | 生成自定义装饰器。 |
-| `filter` | `f` | 生成过滤器声明。 |
-| `gateway` | `ga` | 生成网关声明。 |
-| `guard` | `gu` | 生成守卫声明。 |
-| `interface` | `itf` | 生成接口。 |
-| `interceptor` | `itc` | 生成拦截器声明。 |
-| `middleware` | `mi` | 生成中间件声明。 |
-| `module` | `mo` | 生成模块声明。 |
-| `pipe` | `pi` | 生成管道声明。 |
-| `provider` | `pr` | 生成提供者声明。 |
-| `resolver` | `r` | 生成解析器声明。 |
-| `resource` | `res` | 生成新的 CRUD 资源。有关更多详细信息，请参阅 [CRUD（资源）生成器](/recipes/crud-generator)。（仅限 TS） |
-| `service` | `s` | 生成服务声明。 |
+| Name          | Alias | Description                                                                                                            |
+| ------------- | ----- | ---------------------------------------------------------------------------------------------------------------------- |
+| `app`         |       | Generate a new application within a monorepo (converting a standard mode structure to a monorepo).                     |
+| `library`     | `lib` | Generate a new library within a monorepo (converting a standard mode structure to a monorepo).                         |
+| `class`       | `cl`  | Generate a new class.                                                                                                  |
+| `controller`  | `co`  | Generate a controller declaration.                                                                                     |
+| `decorator`   | `d`   | Generate a custom decorator. As of v12, the generated decorator uses the `Reflector.createDecorator()` form.           |
+| `filter`      | `f`   | Generate a filter declaration.                                                                                         |
+| `gateway`     | `ga`  | Generate a gateway declaration.                                                                                        |
+| `guard`       | `gu`  | Generate a guard declaration.                                                                                          |
+| `interface`   | `itf` | Generate an interface.                                                                                                 |
+| `interceptor` | `itc` | Generate an interceptor declaration.                                                                                   |
+| `middleware`  | `mi`  | Generate a middleware declaration.                                                                                     |
+| `module`      | `mo`  | Generate a module declaration.                                                                                         |
+| `pipe`        | `pi`  | Generate a pipe declaration.                                                                                           |
+| `provider`    | `pr`  | Generate a provider declaration.                                                                                       |
+| `resolver`    | `r`   | Generate a resolver declaration.                                                                                       |
+| `resource`    | `res` | Generate a new CRUD resource (TypeScript only). See the [CRUD (resource) generator](/recipes/crud-generator).          |
+| `service`     | `s`   | Generate a service declaration.                                                                                        |
 
-##### 选项
+##### Options
 
-| 选项 | 描述 |
-| --- | --- |
-| `--dry-run` | 报告将进行的更改，但不更改文件系统。<br/> 别名：`-d` |
-| `--project [project]` | 应添加元素的项目。<br/> 别名：`-p` |
-| `--flat` | 不为元素生成文件夹。 |
-| `--collection [collectionName]` | 指定原理集合。使用包含原理的已安装 npm 包的包名。<br/> 别名：`-c` |
-| `--spec` | 强制生成 spec 文件（默认） |
-| `--no-spec` | 禁用 spec 文件生成 |
+| Option                          | Description                                                                                                     |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `--dry-run`                     | Report the changes that would be made, without changing the filesystem.<br/> Alias: `-d`                        |
+| `--project [project]`           | Project that the element should be added to.<br/> Alias: `-p`                                                   |
+| `--flat`                        | Do not generate a folder for the element.                                                                       |
+| `--no-flat`                     | Generate a folder for the element.                                                                              |
+| `--collection [collectionName]` | Schematics collection to use. Pass the package name of an installed npm package that contains the schematic.<br/> Alias: `-c` |
+| `--spec`                        | Generate spec files (default).                                                                                  |
+| `--no-spec`                     | Skip generating spec files.                                                                                     |
+| `--spec-file-suffix [suffix]`   | Use a custom suffix for spec files.                                                                             |
+| `--skip-import`                 | Skip importing the generated element into its closest module.                                                   |
+| `--format`                      | Format generated files using Prettier.                                                                          |
+| `--type <type>`                 | (`resource` only) Transport layer: `rest`, `graphql-code-first`, `graphql-schema-first`, `microservice`, or `ws`. |
+| `--crud [value]`                | (`resource` only) Whether to generate CRUD entry points (`true` or `false`).                                    |
 
 #### nest build
 
-将应用程序或工作区编译到输出文件夹。
+Compiles an application or workspace into an output folder.
 
-此外，`build` 命令负责：
+The `build` command is also responsible for:
 
-- 通过 `tsconfig-paths` 映射路径（如果使用路径别名）
-- 使用 OpenAPI 装饰器注释 DTO（如果启用了 `@nestjs/swagger` CLI 插件）
-- 使用 GraphQL 装饰器注释 DTO（如果启用了 `@nestjs/graphql` CLI 插件）
+- mapping paths (if you use path aliases) via `tsconfig-paths`
+- annotating DTOs with OpenAPI decorators (if the `@nestjs/swagger` CLI plugin is enabled)
+- annotating DTOs with GraphQL decorators (if the `@nestjs/graphql` CLI plugin is enabled)
 
 ```bash
-$ nest build <name> [options]
+$ nest build [name...] [options]
 
 ```
 
-##### 参数
+##### Arguments
 
-| 参数 | 描述 |
-| --- | --- |
-| `<name>` | 要构建的项目名称。 |
+| Argument    | Description                                                                                  |
+| ----------- | -------------------------------------------------------------------------------------------- |
+| `[name...]` | The name of the project to build. Pass several names to build several projects. If omitted, the default project is built. |
 
-##### 选项
+##### Options
 
-| 选项 | 描述 |
-| --- | --- |
-| `--path [path]` | `tsconfig` 文件的路径。<br/>别名 `-p` |
-| `--config [path]` | `nest-cli` 配置文件的路径。<br/>别名 `-c` |
-| `--watch` | 在监视模式下运行（实时重新加载）。<br /> 如果你使用 `tsc` 进行编译，可以输入 `rs` 重新启动应用程序（当 `manualRestart` 选项设置为 `true` 时）。<br/>别名 `-w` |
-| `--builder [name]` | 指定用于编译的构建器（`tsc`、`swc` 或 `webpack`）。<br/>别名 `-b` |
-| `--webpack` | 使用 webpack 进行编译（已弃用：改用 `--builder webpack`）。 |
-| `--webpackPath` | webpack 配置的路径。 |
-| `--tsc` | 强制使用 `tsc` 进行编译。 |
-| `--watchAssets` | 监视非 TS 文件（如 `.graphql` 等资产）。有关更多详细信息，请参阅[资产](/cli/workspaces#资产)。 |
-| `--type-check` | 启用类型检查（当使用 SWC 时）。 |
-| `--all` | 构建 monorepo 中的所有项目。 |
-| `--preserveWatchOutput` | 在监视模式下保留过时的控制台输出，而不是清屏。（仅限 `tsc` 监视模式） |
+| Option                  | Description                                                                                                                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--path [path]`         | Path to `tsconfig` file. <br/>Alias `-p`                                                                                                                                                   |
+| `--config [path]`       | Path to `nest-cli` configuration file. <br/>Alias `-c`                                                                                                                                     |
+| `--watch`               | Run in watch mode (live-reload).<br /> With the `tsc` compiler, you can type `rs` to restart the application (when the `manualRestart` option is set to `true`). <br/>Alias `-w` |
+| `--builder [name]`      | Builder to use for compilation (`tsc`, `swc`, or `rspack`). <br/>Alias `-b`                                                                                                                |
+| `--webpack`             | Deprecated legacy flag for webpack-based compilation. Use `--builder rspack` or another explicit builder instead.                                                                         |
+| `--webpackPath [path]`  | Deprecated legacy path to a webpack configuration file. Use the configuration supported by your selected builder instead.                                                                 |
+| `--rspackPath [path]`   | Path to a Rspack configuration file.                                                                                                                                                      |
+| `--tsc`                 | Force the use of `tsc` for compilation.                                                                                                                                                    |
+| `--watchAssets`         | Watch non-TS files (assets such as `.graphql` files). See [Assets](/cli/monorepo#assets) for more details.                                                                                 |
+| `--type-check`          | Enable type checking (when SWC is used).                                                                                                                                                   |
+| `--no-type-check`       | Disable type checking (when SWC is used).                                                                                                                                                  |
+| `--emit-declarations`   | Emit declaration files (`.d.ts`) when using the SWC builder.                                                                                                                               |
+| `--all`                 | Build all projects in a monorepo.                                                                                                                                                          |
+| `--parallel [concurrency]` | Build projects in parallel (use with `--all`). Pass a positive integer to limit concurrency, or omit the value for unlimited concurrency.                                                |
+| `--silent`              | Suppress informational compiler logs.                                                                                                                                                      |
+| `--preserveWatchOutput` | Keep outdated console output in watch mode instead of clearing the screen. (`tsc` watch mode only)                                                                                         |
 
 #### nest start
 
-编译并运行应用程序（或工作区中的默认项目）。
+Compiles and runs an application (or the default project in a workspace).
 
 ```bash
-$ nest start <name> [options]
+$ nest start [name] [options]
 
 ```
 
-##### 参数
+##### Arguments
 
-| 参数 | 描述 |
-| --- | --- |
-| `<name>` | 要运行的项目名称。 |
+| Argument | Description                                                          |
+| -------- | -------------------------------------------------------------------- |
+| `[name]` | The name of the project to run. If omitted, the default project runs. |
 
-##### 选项
+##### Options
 
-| 选项 | 描述 |
-| --- | --- |
-| `--path [path]` | `tsconfig` 文件的路径。<br/>别名 `-p` |
-| `--config [path]` | `nest-cli` 配置文件的路径。<br/>别名 `-c` |
-| `--watch` | 在监视模式下运行（实时重新加载）<br/>别名 `-w` |
-| `--builder [name]` | 指定用于编译的构建器（`tsc`、`swc` 或 `webpack`）。<br/>别名 `-b` |
-| `--preserveWatchOutput` | 在监视模式下保留过时的控制台输出，而不是清屏。（仅限 `tsc` 监视模式） |
-| `--watchAssets` | 在监视模式下运行（实时重新加载），监视非 TS 文件（资产）。有关更多详细信息，请参阅[资产](/cli/workspaces#资产)。 |
-| `--debug [hostport]` | 在调试模式下运行（使用 --inspect 标志）<br/>别名 `-d` |
-| `--webpack` | 使用 webpack 进行编译。（已弃用：改用 `--builder webpack`） |
-| `--webpackPath` | webpack 配置的路径。 |
-| `--tsc` | 强制使用 `tsc` 进行编译。 |
-| `--exec [binary]` | 要运行的二进制文件（默认：`node`）。<br/>别名 `-e` |
-| `--no-shell` | 不在 shell 中生成子进程（参见 node 的 `child_process.spawn()` 方法文档）。 |
-| `--env-file` | 从相对于当前目录的文件加载环境变量，使它们在 `process.env` 上对应用程序可用。 |
-| `-- [key=value]` | 可以用 `process.argv` 引用的命令行参数。 |
+| Option                  | Description                                                                                                                        |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `--path [path]`         | Path to `tsconfig` file. <br/>Alias `-p`                                                                                           |
+| `--config [path]`       | Path to `nest-cli` configuration file. <br/>Alias `-c`                                                                             |
+| `--watch`               | Run in watch mode (live-reload). <br/>Alias `-w`                                                                                   |
+| `--builder [name]`      | Builder to use for compilation (`tsc`, `swc`, or `rspack`). <br/>Alias `-b`                                                      |
+| `--preserveWatchOutput` | Keep outdated console output in watch mode instead of clearing the screen. (`tsc` watch mode only)                                 |
+| `--watchAssets`         | Run in watch mode (live-reload), watching non-TS files (assets). See [Assets](/cli/monorepo#assets) for more details.              |
+| `--debug [hostport]`    | Run in debug mode (with the `--inspect` flag). <br/>Alias `-d`                                                                     |
+| `--webpack`             | Deprecated legacy flag for webpack-based compilation. Use `--builder rspack` or another explicit builder instead.                |
+| `--webpackPath [path]`  | Deprecated legacy path to a webpack configuration file. Use the configuration supported by your selected builder instead.          |
+| `--rspackPath [path]`   | Path to a Rspack configuration file.                                                                                              |
+| `--tsc`                 | Force the use of `tsc` for compilation.                                                                                            |
+| `--type-check`          | Enable type checking (when SWC is used).                                                                                           |
+| `--no-type-check`       | Disable type checking (when SWC is used).                                                                                          |
+| `--emit-declarations`   | Emit declaration files (`.d.ts`) when using the SWC builder.                                                                       |
+| `--silent`              | Suppress informational compiler logs.                                                                                              |
+| `--sourceRoot [sourceRoot]` | Root of the source code (overrides the `sourceRoot` setting in `nest-cli.json`).                                               |
+| `--entryFile [entryFile]` | Entry file to run (overrides the `entryFile` setting in `nest-cli.json`).                                                        |
+| `--exec [binary]`       | Binary to run (default: `node`). <br/>Alias `-e`                                                                                   |
+| `--no-shell`            | Do not spawn child processes within a shell (see the Node.js `child_process.spawn()` documentation).                               |
+| `--env-file [path]`     | Load environment variables from a file, relative to the current directory, and expose them to the application on `process.env`. Repeat the option to load several files. |
+| `-- [key=value]`        | Command-line arguments that the application can read from `process.argv`.                                                          |
 
 #### nest add
 
-导入已打包为 **nest 库**的库，运行其安装原理。
+Imports a library that has been packaged as a **nest library**, running its install schematic.
 
 ```bash
 $ nest add <name> [options]
 
 ```
 
-##### 参数
+##### Arguments
 
-| 参数 | 描述 |
-| --- | --- |
-| `<name>` | 要导入的库名称。 |
+| Argument | Description                        |
+| -------- | ---------------------------------- |
+| `<name>` | The name of the library to import. |
+
+##### Options
+
+| Option                | Description                                                                              |
+| --------------------- | ---------------------------------------------------------------------------------------- |
+| `--dry-run`           | Report the changes that would be made, without changing the filesystem.<br/> Alias: `-d` |
+| `--skip-install`      | Skip package installation.<br/> Alias: `-s`                                              |
+| `--project [project]` | Project that the library should be added to.<br/> Alias: `-p`                            |
+
+#### nest upgrade
+
+Upgrades an existing project to the latest NestJS major version.
+
+```bash
+$ nest upgrade [options]
+$ nest update [options]
+
+```
+
+##### Description
+
+Run from the root of a NestJS v11 project, `nest upgrade` updates your dependencies to v12 and applies the mechanical parts of the migration:
+
+- Refuses to run on Node.js releases that lack `require(esm)` (anything older than v20.19, or v22.x older than v22.12)
+- Bumps every recognized `@nestjs/*` package to its v12-compatible major (`@nestjs/graphql`, `@nestjs/apollo`, and `@nestjs/mercurius` go to v14), and reports any other `@nestjs/*` package it doesn't recognize so you can review it yourself
+- Bumps TypeScript to v6 (required by the v12 CLI and schematics), and raises `engines.node` in `package.json` to `>=20.19.0` if it declares a lower floor
+- Migrates `nest-cli.json` off the deprecated `webpack` / `webpackConfigPath` options and onto `--builder rspack`, updating matching `package.json` scripts
+- Renames the GraphQL `playground` option to `graphiql`, switches subscriptions from `subscriptions-transport-ws` to `graphql-ws`, and swaps the packages accordingly
+- Replaces the legacy `nats` package with `@nats-io/transport-node` / `@nats-io/nats-core` and rewrites `nats` imports
+- Moves library-specific `@nestjs/config` settings under `validationOptions.libraryOptions` and bumps Joi to v18 (the first release implementing Standard Schema)
+- Bumps Jest to v30 (and `@types/jest` / `ts-jest` to matching releases) where present, and warns that Jest can `require()` the ESM-only v12 packages only on Node.js v24.9+
+- Optionally installs and wires up [`@nestjs/observe`](/observability/overview). It prompts, unless you pass `--observe` or `--no-observe`
+- Checks `tsconfig.json` and `tsconfig.build.json` for settings that TypeScript 6 or the ESM-only packages no longer support, such as a legacy `moduleResolution` or a missing `rootDir`
+- Scans your sources and prints notes about behavior that changed but can't be migrated automatically, such as lifecycle hook ordering, refined pipe signatures, and structured logging params
+
+The command finishes by installing the updated dependencies (unless `--skip-install` is passed) and printing a report of everything it changed, warned about, and left for you.
+
+> warning **Warning** `nest upgrade` only bumps the **local** `@nestjs/cli` dependency. Update a globally installed CLI yourself with `npm i -g @nestjs/cli@latest`, and do it **before** running the upgrade, because the command itself ships with the CLI.
+
+> info **Hint** The command deliberately does not migrate your project to ESM, Vitest, or oxlint. Those are the defaults for newly generated v12 projects, but existing projects can adopt them on their own schedule. See the [migration guide](/migration-guide) for the full picture.
+
+##### Options
+
+| Option                          | Description                                                                                                       |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `--dry-run`                     | Report the changes that would be made, without changing the filesystem.<br/> Alias: `-d`                          |
+| `--skip-install`                | Skip package installation.<br/> Alias: `-s`                                                                       |
+| `--observe` / `--no-observe`    | Set up `@nestjs/observe`, or skip the setup, without being prompted. Omit both to be prompted in an interactive terminal (the prompt defaults to no). Without a terminal, Observe is not set up. |
+| `--tag [tag]`                   | Use an npm dist-tag (e.g., `next`) instead of the default version ranges.<br/> Alias: `-t`                        |
+| `--collection [collectionName]` | Schematics collection to use. Pass the package name of an installed npm package that contains the schematic.<br/> Alias: `-c` |
+
+#### nest deploy
+
+Deploys your application to the cloud, powered by [Mau](https://mau.nestjs.com/).
+
+```bash
+$ nest deploy [mau-options]
+
+```
+
+##### Description
+
+`nest deploy` is a thin wrapper around the Mau CLI. It locates the Mau binary and forwards every argument you pass to `mau deploy`, so any option Mau supports works here unchanged.
+
+If Mau is not installed in your project, the command offers to add `@nestjs/mau` as a dev dependency and then continues. In a non-interactive environment (e.g., CI), the command fails instead of prompting, so install Mau explicitly first:
+
+```bash
+$ npm install --save-dev @nestjs/mau
+
+```
+
+Once Mau starts, it owns the terminal, so its output and prompts reach you directly. See the [Deployment chapter](/deployment#easy-deployment-with-mau) for what Mau does and how to configure it.
 
 #### nest info
 
-显示有关已安装的 nest 包和其他有用的系统信息。例如：
+Displays information about installed Nest packages and other useful system information. For example:
 
 ```bash
 $ nest info
@@ -195,13 +295,19 @@ $ nest info
 \_| \_/ \___||___/ \__|\____/ \____/  \____/\_____/\___/
 
 [System Information]
-OS Version : macOS High Sierra
-NodeJS Version : v20.18.0
-[Nest Information]
-microservices version : 10.0.0
-websockets version : 10.0.0
-testing version : 10.0.0
-common version : 10.0.0
-core version : 10.0.0
+OS Version     : macOS Sequoia 24.6.0
+NodeJS Version : v22.12.0
+NPM Version    : 10.9.0
+
+[Nest CLI]
+Nest CLI Version : 12.0.3
+
+[Nest Platform Information]
+platform-express version : 12.0.4
+schematics version       : 12.0.4
+testing version          : 12.0.4
+common version           : 12.0.4
+core version             : 12.0.4
+cli version              : 12.0.3
 
 ```
