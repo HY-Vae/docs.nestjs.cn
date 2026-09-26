@@ -1,20 +1,24 @@
-### 第一步
+<!-- 此文件从 content/first-steps.md 自动生成，请勿直接修改此文件 -->
+<!-- 生成时间: 2026-09-26T07:06:26.963Z -->
+<!-- 源文件: content/first-steps.md -->
 
-在这组文章中，你将学习 Nest 的**核心基础**。为了熟悉 Nest 应用程序的基本构建块，我们将构建一个基本的 CRUD 应用程序，其功能在入门级别涵盖了很多内容。
+### First steps
 
-#### 语言
+This set of articles covers the **core fundamentals** of Nest. To introduce the essential building blocks of a Nest application, we'll build a basic CRUD application whose features cover a lot of ground at an introductory level.
 
-我们热爱 [TypeScript](https://www.typescriptlang.org/)，但最重要的是 - 我们热爱 [Node.js](https://nodejs.org/en/)。这就是为什么 Nest 与 TypeScript 和纯 JavaScript 兼容。Nest 利用最新的语言特性，因此要将其与原生 JavaScript 一起使用，我们需要 [Babel](https://babeljs.io/) 编译器。
+#### Language
 
-我们在提供的示例中主要使用 TypeScript，但你始终可以**切换代码片段**到原生 JavaScript 语法（只需点击每个片段右上角的语言按钮即可切换）。
+Nest is written in [TypeScript](https://www.typescriptlang.org/) and runs on [Node.js](https://nodejs.org/en/), and it supports both TypeScript and plain JavaScript. Because Nest relies on the latest language features, using it with plain JavaScript requires [Babel](https://babeljs.io/).
 
-#### 前提条件
+Most examples in this documentation use TypeScript, but you can **switch any code snippet** to plain JavaScript syntax with the language toggle in the upper-right corner of the snippet.
 
-请确保在你的操作系统上安装了 [Node.js](https://nodejs.org)（版本 >= 20）。
+#### Prerequisites
 
-#### 设置
+Make sure that [Node.js](https://nodejs.org) is installed on your operating system. Running a Nest application requires **v20.19 or later** (or **v22.12+** on the 22.x line). The Nest CLI's generators (such as `nest new` and `nest generate`) require **v22.22.3+, v24.15+, or v26+**. We recommend the latest active LTS release, which satisfies both requirements.
 
-使用 [Nest CLI](/cli/overview) 设置新项目非常简单。安装了 [npm](https://www.npmjs.com/) 后，你可以在 OS 终端中使用以下命令创建新的 Nest 项目：
+#### Setup
+
+The quickest way to set up a new project is with the [Nest CLI](/cli/overview). With [npm](https://www.npmjs.com/) installed, run the following commands in your terminal:
 
 ```bash
 $ npm i -g @nestjs/cli
@@ -22,11 +26,13 @@ $ nest new project-name
 
 ```
 
-:::info 提示
-要使用 TypeScript 的 [更严格](https://www.typescriptlang.org/tsconfig#strict) 功能集创建新项目，请将 `--strict` 标志传递给 `nest new` 命令。
-:::
+The CLI asks which module system to use: ESM (the default), which uses Vitest as the test runner, or CommonJS, which uses Jest.
 
-将创建 `project-name` 目录，安装 node 模块和一些其他样板文件，并创建一个 `src/` 目录并填充几个核心文件。
+It also asks whether to set up [NestJS Observe](https://www.observe.nestjs.com/ 'NestJS Observe'), the official observability platform for Nest. If you answer yes, the generated project includes the `@nestjs/observe` SDK, already wired into `AppModule` and `NestFactory.create()`. Requests, background jobs, errors, and distributed traces start reporting as soon as you supply your app key and secret, and the free plan needs no payment details. In an interactive terminal, the prompt defaults to yes; in non-interactive environments, such as CI, it is skipped and Observe is not added. Pass `--observe` or `--no-observe` to skip the prompt either way. See the [Observability](/observability/overview) chapter for what Observe covers.
+
+> info **Hint** New projects are generated with TypeScript's [strict](https://www.typescriptlang.org/tsconfig#strict) mode enabled. To opt out, set `"strict": false` in the generated `tsconfig.json`.
+
+The CLI creates a `project-name` directory, installs the dependencies, generates a few boilerplate files, and populates a `src/` directory with several core files.
 
 <div class="file-tree">
   <div class="item">src</div>
@@ -39,105 +45,91 @@ $ nest new project-name
   </div>
 </div>
 
-以下是这些核心文件的简要概述：
+The following table describes these core files:
 
-|                          |                                                                         |
-| ------------------------ | ----------------------------------------------------------------------- |
-| `app.controller.ts`      | 带有单个路由的基本控制器。                                              |
-| `app.controller.spec.ts` | 控制器的单元测试。                                                      |
-| `app.module.ts`          | 应用程序的根模块。                                                      |
-| `app.service.ts`         | 带有单个方法的基本服务。                                                |
-| `main.ts`                | 应用程序的入口文件，使用核心函数 `NestFactory` 创建 Nest 应用程序实例。 |
+|                          |                                                                                                 |
+| ------------------------ | ----------------------------------------------------------------------------------------------- |
+| `app.controller.ts`      | A basic controller with a single route.                                                         |
+| `app.controller.spec.ts` | The unit tests for the controller.                                                              |
+| `app.module.ts`          | The root module of the application.                                                             |
+| `app.service.ts`         | A basic service with a single method.                                                           |
+| `main.ts`                | The entry file of the application. It uses `NestFactory` to create a Nest application instance. |
 
-`main.ts` 包含一个异步函数，它将**引导**我们的应用程序：
+The `main.ts` file contains an async function that **bootstraps** the application:
 
 ```typescript
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import { AppModule } from './app.module.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   await app.listen(process.env.PORT ?? 3000);
 }
-bootstrap();
-
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  await app.listen(process.env.PORT ?? 3000);
-}
-bootstrap();
+await bootstrap();
 
 ```
 
-要创建 Nest 应用程序实例，我们使用核心 `NestFactory` 类。`NestFactory` 公开了几个静态方法，允许创建应用程序实例。`create()` 方法返回一个应用程序对象，该对象满足 `INestApplication` 接口。此对象提供了一组方法，这些方法将在后续章节中描述。在上面的 `main.ts` 示例中，我们简单地启动 HTTP 监听器，让应用程序等待入站 HTTP 请求。
+To create a Nest application instance, use `NestFactory` from `@nestjs/core`, which exposes a few methods for this purpose. The `create()` method returns an application object that implements the `INestApplication` interface. The methods of this object are described in the following chapters. In the `main.ts` example above, the application starts an HTTP listener and waits for inbound HTTP requests.
 
-请注意，使用 Nest CLI 搭建的项目创建了一个初始项目结构，鼓励开发人员遵循将每个模块保存在自己专用目录中的约定。
+The project structure generated by the Nest CLI encourages the convention of keeping each module in its own dedicated directory.
 
-:::info 提示
-默认情况下，如果在创建应用程序时发生任何错误，你的应用将以代码 `1` 退出。如果你想让它抛出错误而不是退出，请禁用 `abortOnError` 选项（例如，`NestFactory.create(AppModule, {{ '{' }} abortOnError: false {{ '}' }})`）。
-:::
+> info **Hint** By default, if an error occurs while the application is being created, the process exits with code `1`. To have the error thrown instead, disable the `abortOnError` option (e.g., `NestFactory.create(AppModule, {{ '{' }} abortOnError: false {{ '}' }})`).
 
 <app-banner-courses></app-banner-courses>
 
-#### 平台
+#### Platform
 
-Nest 旨在成为一个平台无关的框架。平台独立性使得创建可重用的逻辑部分成为可能，开发人员可以在多种不同类型的应用程序中利用这些部分。从技术上讲，一旦创建了适配器，Nest 就能够与任何 Node HTTP 框架一起工作。有两个 HTTP 平台开箱即用：[express](https://expressjs.com/) 和 [fastify](https://www.fastify.io)。你可以选择最适合你需求的平台。
+Nest is designed to be platform-agnostic. Platform independence lets you create reusable logical parts that can be used across several different types of applications. Nest can work with any Node.js HTTP framework once an adapter is created for it. Two HTTP platforms are supported out of the box: [Express](https://expressjs.com/) and [Fastify](https://www.fastify.io). Choose the one that best suits your needs.
 
-|                    |                                                                                                                                                                                                                                 |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `platform-express` | [Express](https://expressjs.com/) 是一个著名的 Node 极简 Web 框架。它是一个经过实战测试的、生产就绪的库，社区实现了许多资源。`@nestjs/platform-express` 包默认使用。许多用户使用 Express 就足够了，不需要采取任何行动来启用它。 |
-| `platform-fastify` | [Fastify](https://www.fastify.io/) 是一个高性能、低开销的框架，高度专注于提供最大效率和速度。阅读如何使用它 [这里](/techniques/performance)。                                                                                   |
+|                    |                                                                                                                                                                                                                                                                    |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `platform-express` | [Express](https://expressjs.com/) is a well-known, minimalist web framework for Node.js. It is a battle-tested, production-ready library with extensive community resources. Nest uses the `@nestjs/platform-express` package by default, so no setup is required. |
+| `platform-fastify` | [Fastify](https://www.fastify.io/) is a high-performance, low-overhead framework focused on efficiency and speed. To learn how to use it, see [Performance (Fastify)](/http/performance).                                                                    |
 
-无论使用哪个平台，它都会公开自己的应用程序接口。这些分别被视为 `NestExpressApplication` 和 `NestFastifyApplication`。
+Each platform exposes its own application interface: `NestExpressApplication` and `NestFastifyApplication`, respectively.
 
-当你将类型传递给 `NestFactory.create()` 方法时，如下例所示，`app` 对象将具有专用于该特定平台的方法。但是，你不需要指定类型，**除非**你实际上想访问底层平台 API。
+When you pass a type to the `NestFactory.create()` method, as in the example below, the `app` object exposes methods that are available only on that platform. You don't **need** to specify a type **unless** you want to access the underlying platform API.
 
 ```typescript
 const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
 ```
 
-#### 运行应用程序
+#### Running the application
 
-安装过程完成后，你可以在 OS 命令提示符下运行以下命令来启动应用程序监听入站 HTTP 请求：
+Once the installation is complete, run the following command to start the application and listen for inbound HTTP requests:
 
 ```bash
 $ npm run start
 
 ```
 
-:::info 提示
-为了加快开发过程（构建速度提高 20 倍），你可以使用 [SWC 构建器](/recipes/swc)，方法是将 `-b swc` 标志传递给 `start` 脚本，如下所示：`npm run start -- -b swc`。
-:::
+> info **Hint** To speed up development builds, use the [SWC builder](/recipes/swc) by passing the `-b swc` flag to the `start` script: `npm run start -- -b swc`.
 
-此命令启动应用程序，HTTP 服务器监听 `src/main.ts` 文件中定义的端口。应用程序运行后，打开浏览器并导航到 `http://localhost:3000/`。你应该看到 `Hello World!` 消息。
+This command starts the HTTP server on the port defined in the `src/main.ts` file (`3000`, unless the `PORT` environment variable is set). Once the application is running, open your browser and navigate to `http://localhost:3000/`. You should see the `Hello World!` message.
 
-要监视文件中的更改，你可以运行以下命令来启动应用程序：
+To watch your files for changes, start the application with the following command instead:
 
 ```bash
 $ npm run start:dev
 
 ```
 
-此命令将监视你的文件，自动重新编译和重新加载服务器。
+This command watches your files and, whenever they change, recompiles and restarts the server.
 
-#### 代码检查和格式化
+#### Linting and formatting
 
-[CLI](/cli/overview) 尽最大努力搭建一个可扩展的可靠开发工作流。因此，生成的 Nest 项目预装了代码**检查器**和**格式化器**（分别是 [eslint](https://eslint.org/) 和 [prettier](https://prettier.io/)）。
+The [Nest CLI](/cli/overview) aims to scaffold a reliable development workflow that scales. For a fast default workflow, generated TypeScript projects come with a code **linter** and a **formatter** preinstalled: [oxlint](https://oxc.rs/docs/guide/usage/linter.html) and [Prettier](https://prettier.io/), respectively.
 
-:::info 提示
-不确定格式化器与检查器的作用？了解差异 [这里](https://prettier.io/docs/en/comparison.html)。
-:::
+> info **Hint** Not sure how formatters and linters differ? See Prettier's [comparison](https://prettier.io/docs/en/comparison.html).
 
-为确保最大稳定性和可扩展性，我们使用基础 [`eslint`](https://www.npmjs.com/package/eslint) 和 [`prettier`](https://www.npmjs.com/package/prettier) cli 包。此设置允许通过设计与官方扩展进行整洁的 IDE 集成。
-
-对于 IDE 不相关的无头环境（持续集成、Git 钩子等），Nest 项目提供了现成可用的 `npm` 脚本。
+For headless environments where an IDE is not involved (continuous integration, Git hooks, etc.), the project includes ready-to-use `npm` scripts that run [`oxlint`](https://www.npmjs.com/package/oxlint) and [`prettier`](https://www.npmjs.com/package/prettier):
 
 ```bash
-# 使用 eslint 检查并自动修复
+# Lint with oxlint
 $ npm run lint
 
-# 使用 prettier 格式化
+# Format with prettier
 $ npm run format
 
 ```

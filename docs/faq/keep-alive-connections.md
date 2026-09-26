@@ -1,12 +1,14 @@
+<!-- 此文件从 content/faq/keep-alive-connections.md 自动生成，请勿直接修改此文件 -->
+<!-- 生成时间: 2026-09-26T07:06:27.004Z -->
+<!-- 源文件: content/faq/keep-alive-connections.md -->
+
 ### Keep alive connections
 
-By default, the HTTP adapters of NestJS will wait until the response is finished before closing the application. But sometimes, this behavior is not desired, or unexpected. There might be some requests that use `Connection: Keep-Alive` headers that live for a long time.
+By default, the NestJS HTTP adapters wait until responses have finished before closing the application. Sometimes this behavior is unwanted or unexpected: some requests use `Connection: Keep-Alive` headers and keep their connections open for a long time.
 
-For these scenarios where you always want your application to exit without waiting for requests to end, you can enable the `forceCloseConnections` option when creating your NestJS application.
+If you want your application to always exit without waiting for these connections to end, enable the `forceCloseConnections` option when creating your NestJS application.
 
-:::warning Tip
-Most users will not need to enable this option. But the symptom of needing this option is that your application will not exit when you expect it to. Usually when `app.enableShutdownHooks()` is enabled and you notice that the application is not restarting/exiting. Most likely while running the NestJS application during development with `--watch`.
-:::
+> info **Hint** Most users don't need this option. The typical symptom that you do is an application that doesn't exit when you expect it to, usually with `app.enableShutdownHooks()` enabled, and most often during development when running with `--watch`.
 
 #### Usage
 
@@ -14,7 +16,7 @@ In your `main.ts` file, enable the option when creating your NestJS application:
 
 ```typescript
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import { AppModule } from './app.module.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -23,6 +25,8 @@ async function bootstrap() {
   await app.listen(process.env.PORT ?? 3000);
 }
 
-bootstrap();
+await bootstrap();
 
 ```
+
+> info **Note** The `forceCloseConnections` application option is implemented by the Express adapter (`@nestjs/platform-express`). With Fastify, pass Fastify's own `forceCloseConnections` server option to the `FastifyAdapter` constructor instead.
