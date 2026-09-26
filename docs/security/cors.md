@@ -1,14 +1,14 @@
 <!-- 此文件从 content/security/cors.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-03-12T13:42:20.377Z -->
+<!-- 生成时间: 2026-09-26T07:06:26.984Z -->
 <!-- 源文件: content/security/cors.md -->
 
 ### CORS
 
-跨源资源共享（CORS）是一种允许从另一个域请求资源的机制。在底层，Nest 根据底层平台使用 Express [cors](https://github.com/expressjs/cors) 或 Fastify [@fastify/cors](https://github.com/fastify/fastify-cors) 包。这些包提供了各种选项，你可以根据需求进行自定义。
+Cross-origin resource sharing (CORS) is a mechanism that allows resources to be requested from another domain. Under the hood, Nest uses the Express [cors](https://github.com/expressjs/cors) package or the Fastify [@fastify/cors](https://github.com/fastify/fastify-cors) package, depending on the underlying platform. These packages provide various options that you can customize to your requirements.
 
-#### 入门
+#### Getting started
 
-要启用 CORS，请在 Nest 应用程序对象上调用 `enableCors()` 方法。
+To enable CORS, call the `enableCors()` method on the Nest application object.
 
 ```typescript
 const app = await NestFactory.create(AppModule);
@@ -17,12 +17,27 @@ await app.listen(process.env.PORT ?? 3000);
 
 ```
 
-`enableCors()` 方法接受一个可选的配置对象参数。此对象的可用属性在官方 [CORS](https://github.com/expressjs/cors#configuration-options) 文档中描述。另一种方法是传递一个[回调函数](https://github.com/expressjs/cors#configuring-cors-asynchronously)，让你可以根据请求（即时）异步定义配置对象。
+The `enableCors()` method takes an optional configuration object. Its available properties are described in the official [CORS configuration options](https://github.com/expressjs/cors#configuration-options) documentation. Alternatively, pass a [callback function](https://github.com/expressjs/cors#customizing-cors-settings-dynamically-per-request) that computes the configuration object for each request.
 
-或者，通过 `create()` 方法的选项对象启用 CORS。将 `cors` 属性设置为 `true` 以使用默认设置启用 CORS。或者，传递 [CORS 配置对象](https://github.com/expressjs/cors#configuration-options)或[回调函数](https://github.com/expressjs/cors#configuring-cors-asynchronously)作为 `cors` 属性值以自定义其行为。
+You can also enable CORS through the options object of the `create()` method. Set the `cors` property to `true` to enable CORS with default settings, or pass a [CORS configuration object](https://github.com/expressjs/cors#configuration-options) or [callback function](https://github.com/expressjs/cors#customizing-cors-settings-dynamically-per-request) as the `cors` property value to customize its behavior.
 
 ```typescript
 const app = await NestFactory.create(AppModule, { cors: true });
 await app.listen(process.env.PORT ?? 3000);
+
+```
+
+#### Default allowed methods
+
+The two packages do not share the same defaults, so `enableCors()` with no options does not advertise the same `Access-Control-Allow-Methods` on both platforms. The Express [cors](https://github.com/expressjs/cors) package answers `GET,HEAD,PUT,PATCH,POST,DELETE`, while [@fastify/cors](https://github.com/fastify/fastify-cors) answers only the [CORS-safelisted methods](https://fetch.spec.whatwg.org/#methods): `GET,HEAD,POST`.
+
+> warning **Warning** On Fastify, a cross-origin `PUT`, `PATCH`, or `DELETE` is rejected at the preflight stage unless you list the method yourself. The same application code works on Express.
+
+Both packages read the same `methods` option, so define it explicitly whenever your API is called from another origin with a method outside the safelist. It is accepted by `enableCors()` and by the `cors` property of the `create()` options object alike.
+
+```typescript
+app.enableCors({
+  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+});
 
 ```

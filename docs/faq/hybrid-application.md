@@ -1,10 +1,10 @@
 <!-- 此文件从 content/faq/hybrid-application.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-03-12T13:42:20.335Z -->
+<!-- 生成时间: 2026-09-26T07:06:27.003Z -->
 <!-- 源文件: content/faq/hybrid-application.md -->
 
-### 混合应用
+### Hybrid application
 
-混合应用是指监听来自两个或多个不同来源请求的应用。这可以将 HTTP 服务器与微服务监听器结合，甚至可以结合多个不同的微服务监听器。默认的 `createMicroservice` 方法不支持多个服务器，因此在这种情况下，每个微服务必须手动创建和启动。为此，可以通过 `connectMicroservice()` 方法将 `INestApplication` 实例与 `INestMicroservice` 实例连接起来。
+A hybrid application listens for requests from two or more different sources. It can combine an HTTP server with a microservice listener, or combine several different microservice listeners. The `createMicroservice()` method doesn't support multiple servers, so in this case you create and start each microservice manually. To do this, connect `INestMicroservice` instances to the `INestApplication` instance with the `connectMicroservice()` method.
 
 ```typescript
 const app = await NestFactory.create(AppModule);
@@ -17,22 +17,22 @@ await app.listen(3001);
 
 ```
 
-:::info 提示
-`app.listen(port)` 方法在指定地址启动 HTTP 服务器。如果你的应用不处理 HTTP 请求，则应该使用 `app.init()` 方法代替。
-:::
+> info **Hint** The `app.listen(port)` method starts an HTTP server on the specified port. If your application doesn't handle HTTP requests, use the `app.init()` method instead.
 
-要连接多个微服务实例，需要为每个微服务调用 `connectMicroservice()`：
+> warning **Notice** The order of these calls matters. With `await app.startAllMicroservices()` first (as above), the microservices begin consuming messages **before** the application's lifecycle hooks (such as `onModuleInit` and `onApplicationBootstrap`) have completed. Call `app.listen()` (or `app.init()`) before `startAllMicroservices()` if your handlers must not receive messages until every module has fully initialized.
+
+To connect multiple microservice instances, call `connectMicroservice()` once for each microservice:
 
 ```typescript
 const app = await NestFactory.create(AppModule);
-// 微服务 #1
+// microservice #1
 const microserviceTcp = app.connectMicroservice<MicroserviceOptions>({
   transport: Transport.TCP,
   options: {
-    port: 3001,
+    port: 3002,
   },
 });
-// 微服务 #2
+// microservice #2
 const microserviceRedis = app.connectMicroservice<MicroserviceOptions>({
   transport: Transport.REDIS,
   options: {
@@ -46,30 +46,31 @@ await app.listen(3001);
 
 ```
 
-在具有多个微服务的混合应用中，要将 `@MessagePattern()` 仅绑定到一个传输策略（例如 MQTT），我们可以传递 `Transport` 类型的第二个参数，这是一个定义了所有内置传输策略的枚举。
+In a hybrid application with multiple microservices, you can bind `@MessagePattern()` to a single transport strategy (for example, NATS) by passing a second argument that identifies the transport. For the built-in strategies, this is a value of the `Transport` enum; for a [custom transporter](/microservices/custom-transport), it is the `transportId` symbol of its server class.
 
 ```typescript
 @MessagePattern('time.us.*', Transport.NATS)
 getDate(@Payload() data: number[], @Ctx() context: NatsContext) {
-  console.log(`Subject: ${context.getSubject()}`); // 例如 "time.us.east"
+  console.log(`Subject: ${context.getSubject()}`); // e.g. "time.us.east"
   return new Date().toLocaleTimeString(...);
 }
 @MessagePattern({ cmd: 'time.us' }, Transport.TCP)
 getTCPDate(@Payload() data: number[]) {
   return new Date().toLocaleTimeString(...);
 }
+@MessagePattern('topic.time.us', XYZServer.Transport) // XYZServer is a custom transporter
+getXYZDate(@Payload() data: number[]) {
+  return new Date().toLocaleTimeString(...);
+}
 
 ```
 
-:::info 提示
-`@Payload()`、`@Ctx()`、`Transport` 和 `NatsContext` 从 `@nestjs/microservices` 导入。
-:::
+> info **Hint** `@Payload()`, `@Ctx()`, `Transport` and `NatsContext` are imported from `@nestjs/microservices`. `XYZServer.Transport` here stands for the `transportId` symbol exposed by the custom transporter.
 
-#### 共享配置
+#### Sharing configuration
 
-默认情况下，混合应用不会继承为主（基于 HTTP 的）应用配置的全局管道、拦截器、守卫和过滤器。
-
-要从主应用继承这些配置属性，请在 `connectMicroservice()` 调用的第二个参数（可选的选项对象）中设置 `inheritAppConfig` 属性，如下所示：
+By default, connected microservices don't inherit the global pipes, interceptors, guards, and filters configured for the main (HTTP-based) application. This applies both to enhancers registered with the `useGlobal*()` methods and to those registered as providers with the `APP_PIPE`, `APP_INTERCEPTOR`, `APP_GUARD`, and `APP_FILTER` tokens.
+To inherit this configuration, set the `inheritAppConfig` property in the options object passed as the second argument of `connectMicroservice()`:
 
 ```typescript
 const microservice = app.connectMicroservice<MicroserviceOptions>(
@@ -80,3 +81,5 @@ const microservice = app.connectMicroservice<MicroserviceOptions>(
 );
 
 ```
+
+> info **Hint** A connected microservice registers its message handlers as soon as `connectMicroservice()` is called. When you use `inheritAppConfig`, call `app.useGlobalPipes()`, `app.useGlobalGuards()`, and the other `useGlobal*()` methods **before** `connectMicroservice()`, otherwise the enhancers they register won't apply to the microservice's handlers.
