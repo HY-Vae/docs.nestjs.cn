@@ -1,6 +1,10 @@
-### 全局前缀
+<!-- 此文件从 content/faq/global-prefix.md 自动生成，请勿直接修改此文件 -->
+<!-- 生成时间: 2026-10-31T08:01:20.916Z -->
+<!-- 源文件: content/faq/global-prefix.md -->
 
-为了为 HTTP 应用程序中的 **每个路由** 设置一个前缀，请使用 `INestApplication` 实例的 `setGlobalPrefix()` 方法。
+### Global prefix
+
+To set a prefix for **every route** registered in an HTTP application, call the `setGlobalPrefix()` method on the `INestApplication` instance.
 
 ```typescript
 const app = await NestFactory.create(AppModule);
@@ -8,7 +12,7 @@ app.setGlobalPrefix('v1');
 
 ```
 
-可以使用以下构造来排除路由以免影响全局前缀：
+To exclude routes from the global prefix, use the `exclude` option:
 
 ```typescript
 app.setGlobalPrefix('v1', {
@@ -17,11 +21,19 @@ app.setGlobalPrefix('v1', {
 
 ```
 
-或者，您可以指定路由作为字符串（它将应用于每个请求方法）：
+Alternatively, you can specify a route as a string, which excludes it for every request method:
 
 ```typescript
 app.setGlobalPrefix('v1', { exclude: ['cats'] });
 
 ```
 
-> 信息 **提示** `path` 属性支持使用 [path-to-regexp](https://github.com/pillarjs/path-to-regexp#parameters) 包装的通配符参数。请注意，这不接受通配符星号 `*`。相反，您必须使用参数 (`:param`) 或命名通配符 (`*splat`。
+> info **Hint** The `path` property supports wildcard parameters through the [path-to-regexp](https://github.com/pillarjs/path-to-regexp#parameters) package. Bare wildcard asterisks (`*`) are deprecated; use parameters (`:param`) or named wildcards (`*splat`) instead. A named wildcard requires at least one extra segment, so `health/*splat` excludes `/health/status` but not `/health` itself. To exclude both, wrap the wildcard in braces: `health/{{ '{' }}*splat&#125;`.
+
+#### Excluded routes and unmatched requests
+
+Excluded routes are registered outside the prefix, but Nest still handles requests to them that don't match a handler. For example, with `exclude: ['health']` and only a `GET /health` handler, a `POST /health` request goes through your exception filters and gets Nest's standard `404` response.
+
+With the Express adapter, a request to a path that is neither under the prefix nor excluded never reaches Nest: Express answers it with its default `404` page. The Fastify adapter passes every unmatched request to Nest.
+
+> info **Hint** With [URI versioning](/http/versioning) enabled, exclusions are matched without the version segment, and an excluded route keeps it. For example, `exclude: ['health']` with `defaultVersion: '1'` serves the route at `/v1/health`.
